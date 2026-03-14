@@ -1,0 +1,44 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN ?? "";
+
+async function apiFetch(path: string, options: RequestInit = {}) {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${API_TOKEN}`,
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function generateScript(postIds: string[], episodeId?: string) {
+  return apiFetch("/api/generate", {
+    method: "POST",
+    body: JSON.stringify({ post_ids: postIds, episode_id: episodeId }),
+  });
+}
+
+export async function rescorePosts(postIds: string[]) {
+  return apiFetch("/api/score", {
+    method: "POST",
+    body: JSON.stringify({ post_ids: postIds }),
+  });
+}
+
+export async function triggerScrape(sourceId: string) {
+  return apiFetch("/api/scrape", {
+    method: "POST",
+    body: JSON.stringify({ source_id: sourceId }),
+  });
+}
+
+export async function getSources() {
+  return apiFetch("/api/sources");
+}
