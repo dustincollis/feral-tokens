@@ -18,10 +18,24 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   return response.json();
 }
 
-export async function generateScript(postIds: string[], episodeId?: string) {
+export interface ScriptOptions {
+  provider?: string;
+  model?: string;
+}
+
+export async function generateScript(
+  postIds: string[],
+  episodeId?: string,
+  options?: ScriptOptions
+) {
   return apiFetch("/api/generate", {
     method: "POST",
-    body: JSON.stringify({ post_ids: postIds, episode_id: episodeId }),
+    body: JSON.stringify({
+      post_ids: postIds,
+      episode_id: episodeId,
+      provider: options?.provider,
+      model: options?.model,
+    }),
   });
 }
 
