@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
+import { ImageLightbox } from "@/components/shared/ImageLightbox";
 
 export interface ProviderOption {
   provider: string;
@@ -76,6 +78,8 @@ export function EpisodeBuilder({
   selectedProvider,
   onProviderChange,
 }: EpisodeBuilderProps) {
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
@@ -127,8 +131,7 @@ export function EpisodeBuilder({
             const visual = (post as any).score_visual ?? sd?.visual ?? null;
             const virality = (post as any).score_virality ?? sd?.virality ?? null;
             const topical = (post as any).score_topical ?? sd?.topical ?? null;
-            const pitch =
-              (post as any).pitch ?? sd?.pitch ?? null;
+            const pitch = (post as any).pitch ?? sd?.pitch ?? null;
             const hasSubScores =
               commentary !== null && visual !== null && virality !== null && topical !== null;
 
@@ -199,15 +202,17 @@ export function EpisodeBuilder({
                   </button>
                 </div>
 
-                {/* Thumbnail */}
+                {/* Thumbnail - click to zoom */}
                 {post.thumbnail_url && (
                   <div
+                    onClick={() => setLightboxSrc(post.thumbnail_url!)}
                     style={{
                       width: "120px",
                       minWidth: "120px",
                       overflow: "hidden",
                       flexShrink: 0,
                       backgroundColor: "#f3f4f6",
+                      cursor: "zoom-in",
                     }}
                   >
                     <img
@@ -234,7 +239,6 @@ export function EpisodeBuilder({
                     gap: "3px",
                   }}
                 >
-                  {/* Title */}
                   <p
                     style={{
                       fontSize: "14px",
@@ -250,7 +254,6 @@ export function EpisodeBuilder({
                     {post.title}
                   </p>
 
-                  {/* Body */}
                   {post.body && (
                     <p
                       style={{
@@ -267,7 +270,6 @@ export function EpisodeBuilder({
                     </p>
                   )}
 
-                  {/* Sub-scores */}
                   {hasSubScores && (
                     <div
                       style={{
@@ -283,7 +285,6 @@ export function EpisodeBuilder({
                     </div>
                   )}
 
-                  {/* Pitch */}
                   {pitch && (
                     <p
                       style={{
@@ -327,6 +328,14 @@ export function EpisodeBuilder({
             );
           })}
         </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          onClose={() => setLightboxSrc(null)}
+        />
       )}
     </div>
   );

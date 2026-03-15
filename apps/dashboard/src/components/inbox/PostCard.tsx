@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
+import { ImageLightbox } from "@/components/shared/ImageLightbox";
 
 interface PostCardProps {
   post: UnifiedPost;
   selected: boolean;
   onSelect: (post: UnifiedPost) => void;
 }
-// comment
+
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   companion: { bg: "#ede9fe", text: "#6d28d9" },
   behavior: { bg: "#fef3c7", text: "#92400e" },
@@ -15,7 +17,6 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   creepy: { bg: "#fde2e2", text: "#991b1b" },
   culture: { bg: "#dbeafe", text: "#1e40af" },
   other: { bg: "#f3f4f6", text: "#374151" },
-  // Legacy categories
   funny: { bg: "#fce7f3", text: "#9d174d" },
   concerning: { bg: "#fde2e2", text: "#991b1b" },
   meta: { bg: "#dbeafe", text: "#1e40af" },
@@ -58,6 +59,8 @@ function ScoreBox({ label, value }: { label: string; value: number }) {
 }
 
 export function PostCard({ post, selected, onSelect }: PostCardProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const score = post.score ?? 0;
   const scoreColor =
     score >= 8
@@ -81,193 +84,204 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
     commentary !== null && visual !== null && virality !== null && topical !== null;
 
   return (
-    <div
-      onClick={() => onSelect(post)}
-      style={{
-        cursor: "pointer",
-        borderRadius: "8px",
-        border: selected ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-        overflow: "hidden",
-        marginBottom: "12px",
-        backgroundColor: "white",
-        boxShadow: selected ? "0 4px 6px rgba(0,0,0,0.1)" : "none",
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "stretch",
-      }}
-    >
-      {/* Thumbnail */}
-      {post.thumbnail_url ? (
-        <div
-          style={{
-            width: "320px",
-            minWidth: "320px",
-            maxWidth: "320px",
-            backgroundColor: "#f3f4f6",
-            overflow: "hidden",
-            flexShrink: 0,
-          }}
-        >
-          <img
-            src={post.thumbnail_url}
-            alt={post.title}
-            style={{
-              width: "320px",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).parentElement!.style.display = "none";
-            }}
-          />
-        </div>
-      ) : (
-        <div
-          style={{
-            width: "320px",
-            minWidth: "320px",
-            backgroundColor: "#f3f4f6",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#d1d5db",
-            fontSize: "11px",
-            flexShrink: 0,
-          }}
-        >
-          No image
-        </div>
-      )}
-
-      {/* Content */}
+    <>
       <div
         style={{
-          flex: 1,
-          padding: "10px 12px",
-          minWidth: 0,
+          borderRadius: "8px",
+          border: selected ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+          overflow: "hidden",
+          marginBottom: "12px",
+          backgroundColor: "white",
+          boxShadow: selected ? "0 4px 6px rgba(0,0,0,0.1)" : "none",
           display: "flex",
-          flexDirection: "column",
-          gap: "4px",
+          flexDirection: "row",
+          alignItems: "stretch",
         }}
       >
-        {/* Top row: badges */}
-        <div
-          style={{
-            display: "flex",
-            gap: "6px",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: "bold",
-              color: "white",
-              backgroundColor: scoreColor,
-              padding: "1px 8px",
-              borderRadius: "999px",
+        {/* Thumbnail - click to zoom */}
+        {post.thumbnail_url ? (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxOpen(true);
             }}
-          >
-            {score.toFixed(1)}
-          </span>
-          {post.category && (
-            <span
-              style={{
-                fontSize: "11px",
-                padding: "1px 8px",
-                borderRadius: "999px",
-                backgroundColor: catColors.bg,
-                color: catColors.text,
-                fontWeight: 500,
-              }}
-            >
-              {post.category}
-            </span>
-          )}
-          <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto" }}>
-            {post.platform}
-          </span>
-        </div>
-
-        {/* Title */}
-        <p
-          style={{
-            fontSize: "20px",
-            fontWeight: "600",
-            lineHeight: "1.4",
-            color: "#111827",
-          }}
-        >
-          {post.title}
-        </p>
-
-        {/* Body - original post text */}
-        {post.body && (
-          <p
             style={{
-              fontSize: "18px",
-              color: "#374151",
-              lineHeight: "1.5",
+              width: "320px",
+              minWidth: "320px",
+              maxWidth: "320px",
+              backgroundColor: "#f3f4f6",
               overflow: "hidden",
-              display: "-webkit-box",
-              WebkitLineClamp: 4,
-              WebkitBoxOrient: "vertical" as const,
+              flexShrink: 0,
+              cursor: "zoom-in",
             }}
           >
-            {post.body}
-          </p>
-        )}
-
-        {/* Spacer between text and scores */}
-        <div style={{ marginTop: "12px" }} />
-
-        {/* Sub-scores as boxes */}
-        {hasSubScores && (
+            <img
+              src={post.thumbnail_url}
+              alt={post.title}
+              style={{
+                width: "320px",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).parentElement!.style.display = "none";
+              }}
+            />
+          </div>
+        ) : (
           <div
             style={{
+              width: "320px",
+              minWidth: "320px",
+              backgroundColor: "#f3f4f6",
               display: "flex",
-              gap: "8px",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#d1d5db",
+              fontSize: "11px",
+              flexShrink: 0,
             }}
           >
-            <ScoreBox label="Commentary" value={commentary} />
-            <ScoreBox label="Visual" value={visual} />
-            <ScoreBox label="Virality" value={virality} />
-            <ScoreBox label="Topical" value={topical} />
+            No image
           </div>
         )}
 
-        {/* Pitch (AI-generated segment angle) */}
-        {pitch && (
-          <p
+        {/* Content - click to add/remove from episode */}
+        <div
+          onClick={() => onSelect(post)}
+          style={{
+            flex: 1,
+            padding: "10px 12px",
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            cursor: "pointer",
+          }}
+        >
+          {/* Top row: badges */}
+          <div
             style={{
-              fontSize: "12px",
-              color: "#6b7280",
-              marginTop: "8px",
-              fontStyle: "italic",
-              lineHeight: "1.4",
-              borderLeft: "2px solid #3b82f6",
-              paddingLeft: "8px",
+              display: "flex",
+              gap: "6px",
+              alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            {pitch}
-          </p>
-        )}
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: "bold",
+                color: "white",
+                backgroundColor: scoreColor,
+                padding: "1px 8px",
+                borderRadius: "999px",
+              }}
+            >
+              {score.toFixed(1)}
+            </span>
+            {post.category && (
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "1px 8px",
+                  borderRadius: "999px",
+                  backgroundColor: catColors.bg,
+                  color: catColors.text,
+                  fontWeight: 500,
+                }}
+              >
+                {post.category}
+              </span>
+            )}
+            <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto" }}>
+              {post.platform}
+            </span>
+          </div>
 
-        {/* Legacy reason */}
-        {!pitch && !hasSubScores && sd?.reason && (
+          {/* Title */}
           <p
             style={{
-              fontSize: "11px",
-              color: "#9ca3af",
-              fontStyle: "italic",
+              fontSize: "20px",
+              fontWeight: "600",
+              lineHeight: "1.4",
+              color: "#111827",
             }}
           >
-            {sd.reason}
+            {post.title}
           </p>
-        )}
+
+          {/* Body */}
+          {post.body && (
+            <p
+              style={{
+                fontSize: "18px",
+                color: "#374151",
+                lineHeight: "1.5",
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: "vertical" as const,
+              }}
+            >
+              {post.body}
+            </p>
+          )}
+
+          {/* Spacer */}
+          <div style={{ marginTop: "12px" }} />
+
+          {/* Sub-scores */}
+          {hasSubScores && (
+            <div style={{ display: "flex", gap: "8px" }}>
+              <ScoreBox label="Commentary" value={commentary} />
+              <ScoreBox label="Visual" value={visual} />
+              <ScoreBox label="Virality" value={virality} />
+              <ScoreBox label="Topical" value={topical} />
+            </div>
+          )}
+
+          {/* Pitch */}
+          {pitch && (
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "8px",
+                fontStyle: "italic",
+                lineHeight: "1.4",
+                borderLeft: "2px solid #3b82f6",
+                paddingLeft: "8px",
+              }}
+            >
+              {pitch}
+            </p>
+          )}
+
+          {/* Legacy reason */}
+          {!pitch && !hasSubScores && sd?.reason && (
+            <p
+              style={{
+                fontSize: "11px",
+                color: "#9ca3af",
+                fontStyle: "italic",
+              }}
+            >
+              {sd.reason}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && post.thumbnail_url && (
+        <ImageLightbox
+          src={post.thumbnail_url}
+          alt={post.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+    </>
   );
 }
