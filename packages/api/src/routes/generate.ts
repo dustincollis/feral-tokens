@@ -73,6 +73,10 @@ const SCRIPT_SYSTEM_PROMPT = [
     "   - End bits clean. Once you have landed your best line on a topic,",
     "     stop. Do not add a concluding sentence that restates the point.",
     "     The best line IS the ending.",
+    "   - If you catch yourself writing a sentence that starts with 'This is",
+    "     the thing about...' or 'The thing is...' or 'Here's what gets me...',",
+    "     delete it. Those are thesis statement flags. Make the point through",
+    "     a specific detail or joke instead.",
     "",
     "SHORTS MARKERS:",
     "   Mark 2-3 moments in the script with [SHORTS CANDIDATE] and",
@@ -98,6 +102,13 @@ const SCRIPT_SYSTEM_PROMPT = [
     "     take political sides on it.",
     "   - If a post involves someone in genuine distress, acknowledge it briefly",
     "     and move on. Do not mine it for laughs.",
+    "CRITICAL RULES:",
+    "   - ONLY use the posts provided below. Do not invent, fabricate, or",
+    "     imagine additional posts, screenshots, stories, or user histories.",
+    "     If you are given 2 posts, write a shorter episode covering 2 posts.",
+    "     If given 8 posts, write a full episode. Scale to the input.",
+    "   - Shorter is better. A 3-minute episode that is tight beats a",
+    "     9-minute episode that wanders. Never pad for length.",
   ].join("\n");
   
   const SCRIPT_USER_PROMPT = [
