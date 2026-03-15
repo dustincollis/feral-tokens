@@ -85,53 +85,67 @@ export function EpisodeBuilder({
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {posts.map((post, index) => (
-            <div
-              key={post.id}
-              className="flex items-start gap-3 p-3 bg-white border rounded-lg"
-            >
-              <span className="text-gray-400 font-mono text-sm w-5 shrink-0">
-                {index + 1}
-              </span>
-              {post.thumbnail_url && (
-                <img
-                  src={post.thumbnail_url}
-                  alt={post.title}
-                  className="w-12 h-12 object-cover rounded shrink-0"
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium line-clamp-2">{post.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {post.platform} · score {post.score?.toFixed(1)}
-                </p>
-              </div>
-              <div className="flex flex-col gap-1 shrink-0">
-                <button
-                  onClick={() => index > 0 && onReorder(index, index - 1)}
-                  disabled={index === 0}
-                  className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                >
-                  ↑
-                </button>
-                <button
-                  onClick={() =>
-                    index < posts.length - 1 && onReorder(index, index + 1)
-                  }
-                  disabled={index === posts.length - 1}
-                  className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                >
-                  ↓
-                </button>
-              </div>
-              <button
-                onClick={() => onRemove(post.id)}
-                className="text-xs text-red-400 hover:text-red-600 shrink-0"
+          {posts.map((post, index) => {
+            const pitch =
+              (post as any).pitch ??
+              (post.score_data as any)?.pitch ??
+              null;
+
+            return (
+              <div
+                key={post.id}
+                className="flex items-start gap-3 p-3 bg-white border rounded-lg"
               >
-                ✕
-              </button>
-            </div>
-          ))}
+                <span className="text-gray-400 font-mono text-sm w-5 shrink-0">
+                  {index + 1}
+                </span>
+                {post.thumbnail_url && (
+                  <img
+                    src={post.thumbnail_url}
+                    alt={post.title}
+                    className="w-12 h-12 object-cover rounded shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium line-clamp-2">
+                    {post.title}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {post.platform} · score {post.score?.toFixed(1)}
+                  </p>
+                  {pitch && (
+                    <p className="text-xs text-gray-500 italic mt-1 leading-relaxed">
+                      {pitch}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <button
+                    onClick={() => index > 0 && onReorder(index, index - 1)}
+                    disabled={index === 0}
+                    className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() =>
+                      index < posts.length - 1 && onReorder(index, index + 1)
+                    }
+                    disabled={index === posts.length - 1}
+                    className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                  >
+                    ↓
+                  </button>
+                </div>
+                <button
+                  onClick={() => onRemove(post.id)}
+                  className="text-xs text-red-400 hover:text-red-600 shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
