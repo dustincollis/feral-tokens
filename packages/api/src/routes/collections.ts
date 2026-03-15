@@ -218,5 +218,3 @@ collectionsRoute.post("/", async (c) => {
 });
 
 export { collectionsRoute };
-
-else;
