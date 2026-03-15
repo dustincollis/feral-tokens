@@ -13,9 +13,12 @@ const app = new Hono();
 
 app.use("*", cors());
 app.use("*", logger());
-app.use("/api/*", authMiddleware);
 
+// Health is public
 app.route("/api/health", healthRoute);
+
+// Everything else requires auth
+app.use("/api/*", authMiddleware);
 app.route("/api/scrape", scrapeRoute);
 app.route("/api/score", scoreRoute);
 app.route("/api/generate", generateRoute);
