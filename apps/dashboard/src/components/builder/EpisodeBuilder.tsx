@@ -2,12 +2,33 @@
 
 import { UnifiedPost } from "@feral-tokens/shared";
 
+export interface ProviderOption {
+  provider: string;
+  model: string;
+  label: string;
+}
+
+export const PROVIDER_OPTIONS: ProviderOption[] = [
+  {
+    provider: "anthropic",
+    model: "claude-opus-4-20250514",
+    label: "Claude Opus",
+  },
+  {
+    provider: "xai",
+    model: "grok-4-fast",
+    label: "Grok 4 Fast",
+  },
+];
+
 interface EpisodeBuilderProps {
   posts: UnifiedPost[];
   onRemove: (postId: string) => void;
   onReorder: (from: number, to: number) => void;
   onGenerateScript: () => void;
   generating: boolean;
+  selectedProvider: ProviderOption;
+  onProviderChange: (option: ProviderOption) => void;
 }
 
 export function EpisodeBuilder({
@@ -16,20 +37,46 @@ export function EpisodeBuilder({
   onReorder,
   onGenerateScript,
   generating,
+  selectedProvider,
+  onProviderChange,
 }: EpisodeBuilderProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b flex items-center justify-between">
-        <h2 className="font-semibold text-gray-700">
-          Episode Builder ({posts.length} bits)
-        </h2>
-        <button
-          onClick={onGenerateScript}
-          disabled={posts.length === 0 || generating}
-          className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-1.5 rounded"
-        >
-          {generating ? "Generating..." : "Generate Script"}
-        </button>
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-gray-700">
+            Episode Builder ({posts.length} bits)
+          </h2>
+          <button
+            onClick={onGenerateScript}
+            disabled={posts.length === 0 || generating}
+            className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-1.5 rounded"
+          >
+            {generating ? "Generating..." : "Generate Script"}
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500">Model:</label>
+          <select
+            value={`${selectedProvider.provider}:${selectedProvider.model}`}
+            onChange={(e) => {
+              const option = PROVIDER_OPTIONS.find(
+                (o) => `${o.provider}:${o.model}` === e.target.value
+              );
+              if (option) onProviderChange(option);
+            }}
+            className="text-xs border rounded px-2 py-1 text-gray-600 bg-white"
+          >
+            {PROVIDER_OPTIONS.map((option) => (
+              <option
+                key={`${option.provider}:${option.model}`}
+                value={`${option.provider}:${option.model}`}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {posts.length === 0 ? (

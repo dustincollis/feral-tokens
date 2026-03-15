@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
 import { PostInbox } from "@/components/inbox/PostInbox";
-import { EpisodeBuilder } from "@/components/builder/EpisodeBuilder";
+import {
+  EpisodeBuilder,
+  ProviderOption,
+  PROVIDER_OPTIONS,
+} from "@/components/builder/EpisodeBuilder";
 import { ScriptPanel } from "@/components/script/ScriptPanel";
 import { generateScript } from "@/lib/api";
 
@@ -11,6 +15,9 @@ export default function Home() {
   const [episodePosts, setEpisodePosts] = useState<UnifiedPost[]>([]);
   const [script, setScript] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(
+    PROVIDER_OPTIONS[0]
+  );
 
   function handleAddToEpisode(post: UnifiedPost) {
     setEpisodePosts((prev) => {
@@ -38,7 +45,14 @@ export default function Home() {
     if (episodePosts.length === 0) return;
     setGenerating(true);
     try {
-      const result = await generateScript(episodePosts.map((p) => p.id));
+      const result = await generateScript(
+        episodePosts.map((p) => p.id),
+        undefined,
+        {
+          provider: selectedProvider.provider,
+          model: selectedProvider.model,
+        }
+      );
       setScript(result.script);
     } catch (err) {
       console.error("Script generation failed:", err);
@@ -58,12 +72,24 @@ export default function Home() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", backgroundColor: "#f9fafb" }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        backgroundColor: "#f9fafb",
+      }}
+    >
       <div style={colStyle}>
         <div style={{ padding: "16px", borderBottom: "1px solid #e5e7eb" }}>
-          <h1 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827" }}>Feral Tokens</h1>
+          <h1
+            style={{ fontSize: "18px", fontWeight: "bold", color: "#111827" }}
+          >
+            Feral Tokens
+          </h1>
           <p style={{ fontSize: "12px", color: "#6b7280" }}>Content Inbox</p>
-          <a href="/settings" style={{ fontSize: "12px", color: "#3b82f6" }}>Settings</a>
+          <a href="/settings" style={{ fontSize: "12px", color: "#3b82f6" }}>
+            Settings
+          </a>
         </div>
         <PostInbox
           onAddToEpisode={handleAddToEpisode}
@@ -78,6 +104,8 @@ export default function Home() {
           onReorder={handleReorder}
           onGenerateScript={handleGenerateScript}
           generating={generating}
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
         />
       </div>
 

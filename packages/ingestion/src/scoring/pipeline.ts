@@ -5,7 +5,7 @@ import { parseScoringResponse } from "./parse";
 
 const client = new Anthropic();
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 8;
 
 export async function runScoringPipeline(): Promise<void> {
   const { data: posts, error } = await supabase
@@ -43,7 +43,8 @@ export async function runScoringPipeline(): Promise<void> {
           try {
             const response = await fetch(post.thumbnail_url);
             if (response.ok) {
-              const contentType = response.headers.get("content-type") ?? "image/jpeg";
+              const contentType =
+                response.headers.get("content-type") ?? "image/jpeg";
               if (contentType.startsWith("image/")) {
                 const buffer = await response.arrayBuffer();
                 const base64 = Buffer.from(buffer).toString("base64");
@@ -55,7 +56,11 @@ export async function runScoringPipeline(): Promise<void> {
                   type: "image",
                   source: {
                     type: "base64",
-                    media_type: contentType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                    media_type: contentType as
+                      | "image/jpeg"
+                      | "image/png"
+                      | "image/gif"
+                      | "image/webp",
                     data: base64,
                   },
                 });
@@ -69,7 +74,7 @@ export async function runScoringPipeline(): Promise<void> {
 
       const message = await client.messages.create({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{ role: "user", content }],
       });
 
@@ -82,16 +87,22 @@ export async function runScoringPipeline(): Promise<void> {
         await supabase
           .from("posts")
           .update({
-            score: score.score,
+            score: score.composite,
+            score_commentary: score.commentary,
+            score_visual: score.visual,
+            score_virality: score.virality,
+            score_topical: score.topical,
+            pitch: score.pitch,
             category: score.category,
             status: "scored",
-            score_data: { reason: score.reason },
             updated_at: new Date().toISOString(),
           })
           .eq("id", score.id);
       }
 
-      console.log(`Scored batch ${Math.floor(i / BATCH_SIZE) + 1}: ${scores.length} posts`);
+      console.log(
+        `Scored batch ${Math.floor(i / BATCH_SIZE) + 1}: ${scores.length} posts`
+      );
 
       if (i + BATCH_SIZE < posts.length) {
         await new Promise((res) => setTimeout(res, 1000));

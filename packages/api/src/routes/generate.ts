@@ -1,10 +1,72 @@
 import { Hono } from "hono";
 import { supabase } from "@feral-tokens/shared";
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 export const generateRoute = new Hono();
 
-const client = new Anthropic();
+// ---------------------------------------------------------------------------
+// Provider configuration
+// ---------------------------------------------------------------------------
+
+type Provider = "anthropic" | "xai";
+
+const DEFAULT_PROVIDER: Provider =
+  (process.env.SCRIPT_PROVIDER as Provider) ?? "anthropic";
+
+const DEFAULT_MODEL: string =
+  process.env.SCRIPT_MODEL ?? "claude-opus-4-20250514";
+
+// Anthropic client — reads ANTHROPIC_API_KEY from env automatically
+const anthropicClient = new Anthropic();
+
+// xAI client — uses OpenAI SDK pointed at xAI's base URL
+const xaiClient = new OpenAI({
+  apiKey: process.env.XAI_API_KEY ?? "",
+  baseURL: "https://api.x.ai/v1",
+});
+
+// ---------------------------------------------------------------------------
+// Provider abstraction
+// ---------------------------------------------------------------------------
+
+async function callProvider(
+  provider: Provider,
+  model: string,
+  system: string,
+  userMessage: string
+): Promise<string> {
+  switch (provider) {
+    case "xai": {
+      const response = await xaiClient.chat.completions.create({
+        model,
+        max_tokens: 4000,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: userMessage },
+        ],
+      });
+      return response.choices[0]?.message?.content ?? "";
+    }
+
+    case "anthropic":
+    default: {
+      const message = await anthropicClient.messages.create({
+        model,
+        max_tokens: 4000,
+        system,
+        messages: [{ role: "user", content: userMessage }],
+      });
+      return message.content[0].type === "text"
+        ? message.content[0].text
+        : "";
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Prompt
+// ---------------------------------------------------------------------------
 
 const SCRIPT_SYSTEM_PROMPT = [
   "You are the scriptwriter for Feral Tokens, a YouTube channel covering AI culture,",
@@ -107,6 +169,17 @@ const SCRIPT_SYSTEM_PROMPT = [
   "   endings stacked. Instead, land on your single best closing line and",
   "   stop. The juxtaposition of the items IS the commentary. Trust it.",
   "",
+  "ALSO BAD - DO NOT DO THIS EITHER:",
+  "   'We're watching the eternal struggle between what users want and what",
+  "   platforms allow. That filter didn't protect anyone - it just protected",
+  "   the company. Same platform that lets X but blocks Y.'",
+  "   This is a thesis paragraph disguised as commentary. It zooms out,",
+  "   editorializes about what the episode means, and restates points",
+  "   already made in individual bits. Instead, if you have a sharp",
+  "   observation like 'same platform that lets Jesus freestyle about Apollo",
+  "   but cuts off a fantasy plot at the good part,' just say that one line",
+  "   and move to the CTA. No windup. No preamble about eternal struggles.",
+  "",
   "SHORTS MARKERS:",
   "   Mark 2-3 moments in the script with [SHORTS CANDIDATE] and",
   "   [END SHORTS CANDIDATE] that could stand alone as a 30-60 second clip.",
@@ -141,9 +214,17 @@ const SCRIPT_USER_PROMPT = [
   "Posts for this episode:",
 ].join("\n");
 
+// ---------------------------------------------------------------------------
+// Route
+// ---------------------------------------------------------------------------
+
 generateRoute.post("/", async (c) => {
   const body = await c.req.json();
   const { episode_id, post_ids } = body;
+
+  // Allow per-request provider/model override for A/B testing
+  const provider: Provider = body.provider ?? DEFAULT_PROVIDER;
+  const model: string = body.model ?? DEFAULT_MODEL;
 
   if (!post_ids || !Array.isArray(post_ids)) {
     return c.json({ error: "post_ids array is required" }, 400);
@@ -159,32 +240,29 @@ generateRoute.post("/", async (c) => {
   }
 
   const postsText = posts
-    .map((p, i) => [
-      `## Post ${i + 1}`,
-      `Title: ${p.title}`,
-      `Platform: ${p.platform}`,
-      `URL: ${p.post_url}`,
-      p.body ? `Body: ${p.body.slice(0, 500)}` : "",
-      `Score: ${p.score} | Category: ${p.category}`,
-      `Why it scored: ${p.score_data?.reason ?? "N/A"}`,
-      p.image_url ? `Has image: yes` : "Has image: no",
-    ].filter(Boolean).join("\n"))
+    .map(
+      (p, i) =>
+        [
+          `## Post ${i + 1}`,
+          `Title: ${p.title}`,
+          `Platform: ${p.platform}`,
+          `URL: ${p.post_url}`,
+          p.body ? `Body: ${p.body.slice(0, 500)}` : "",
+          `Score: ${p.score} | Category: ${p.category}`,
+          `Why it scored: ${p.score_data?.reason ?? "N/A"}`,
+          p.image_url ? `Has image: yes` : "Has image: no",
+        ]
+          .filter(Boolean)
+          .join("\n")
+    )
     .join("\n\n");
 
-  const message = await client.messages.create({
-    model: "claude-opus-4-20250514",
-    max_tokens: 4000,
-    system: SCRIPT_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `${SCRIPT_USER_PROMPT}\n\n${postsText}`,
-      },
-    ],
-  });
-
-  const script =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const script = await callProvider(
+    provider,
+    model,
+    SCRIPT_SYSTEM_PROMPT,
+    `${SCRIPT_USER_PROMPT}\n\n${postsText}`
+  );
 
   if (episode_id) {
     await supabase
@@ -197,5 +275,5 @@ generateRoute.post("/", async (c) => {
       .eq("id", episode_id);
   }
 
-  return c.json({ script });
+  return c.json({ script, provider, model });
 });
