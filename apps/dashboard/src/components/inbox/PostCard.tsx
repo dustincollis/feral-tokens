@@ -8,64 +8,52 @@ interface PostCardProps {
   onSelect: (post: UnifiedPost) => void;
 }
 
-const categoryColors: Record<string, string> = {
-  companion: "bg-purple-100 text-purple-800",
-  behavior: "bg-blue-100 text-blue-800",
-  funny: "bg-yellow-100 text-yellow-800",
-  concerning: "bg-red-100 text-red-800",
-  meta: "bg-gray-100 text-gray-800",
-  other: "bg-green-100 text-green-800",
-};
-
 export function PostCard({ post, selected, onSelect }: PostCardProps) {
   const score = post.score ?? 0;
-  const scoreColor =
-    score >= 8
-      ? "bg-green-500"
-      : score >= 6
-      ? "bg-yellow-500"
-      : score >= 4
-      ? "bg-orange-500"
-      : "bg-red-500";
+  const scoreColor = score >= 8 ? "#22c55e" : score >= 6 ? "#eab308" : score >= 4 ? "#f97316" : "#ef4444";
 
   return (
     <div
       onClick={() => onSelect(post)}
-      className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all ${
-        selected
-          ? "border-blue-500 shadow-lg"
-          : "border-gray-200 hover:border-gray-400"
-      }`}
+      style={{
+        cursor: "pointer",
+        borderRadius: "8px",
+        border: selected ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+        overflow: "hidden",
+        marginBottom: "12px",
+        backgroundColor: "white",
+        boxShadow: selected ? "0 4px 6px rgba(0,0,0,0.1)" : "none",
+      }}
     >
       {post.thumbnail_url ? (
         <img
           src={post.thumbnail_url}
           alt={post.title}
-          className="w-full h-40 object-cover"
+          style={{ width: "100%", height: "160px", objectFit: "cover" }}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
           }}
         />
       ) : (
-        <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+        <div style={{ width: "100%", height: "80px", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "12px" }}>
           No image
         </div>
       )}
-      <div className="p-3">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className={`text-xs font-bold text-white px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>
+      <div style={{ padding: "12px" }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "11px", fontWeight: "bold", color: "white", backgroundColor: scoreColor, padding: "2px 8px", borderRadius: "999px" }}>
             {score.toFixed(1)}
           </span>
           {post.category && (
-            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${categoryColors[post.category] ?? "bg-gray-100 text-gray-800"}`}>
+            <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", backgroundColor: "#f3f4f6", color: "#374151" }}>
               {post.category}
             </span>
           )}
         </div>
-        <p className="text-sm font-medium leading-snug mb-1">{post.title}</p>
-        <p className="text-xs text-gray-500">{post.platform}</p>
+        <p style={{ fontSize: "14px", fontWeight: "500", marginBottom: "4px", lineHeight: "1.4" }}>{post.title}</p>
+        <p style={{ fontSize: "12px", color: "#6b7280" }}>{post.platform}</p>
         {post.score_data && (
-          <p className="text-xs text-gray-400 mt-1 italic line-clamp-2">
+          <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px", fontStyle: "italic" }}>
             {(post.score_data as any).reason}
           </p>
         )}
