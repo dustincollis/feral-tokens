@@ -109,9 +109,9 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
       {post.thumbnail_url ? (
         <div
           style={{
-            width: "380px",
-            minWidth: "380px",
-            maxWidth: "380px",
+            width: "240px",
+            minWidth: "240px",
+            maxWidth: "240px",
             backgroundColor: "#f3f4f6",
             overflow: "hidden",
             flexShrink: 0,
@@ -121,7 +121,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
             src={post.thumbnail_url}
             alt={post.title}
             style={{
-              width: "380px",
+              width: "240px",
               height: "100%",
               objectFit: "cover",
               display: "block",
@@ -134,8 +134,8 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
       ) : (
         <div
           style={{
-            width: "380px",
-            minWidth: "380px",
+            width: "240px",
+            minWidth: "240px",
             backgroundColor: "#f3f4f6",
             display: "flex",
             alignItems: "center",
@@ -203,28 +203,25 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         {/* Title */}
         <p
           style={{
-            fontSize: "13px",
-            fontWeight: "500",
+            fontSize: "14px",
+            fontWeight: "600",
             lineHeight: "1.4",
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical" as const,
+            color: "#111827",
           }}
         >
           {post.title}
         </p>
 
-        {/* Body preview */}
+        {/* Body - original post text */}
         {post.body && (
           <p
             style={{
-              fontSize: "12px",
-              color: "#6b7280",
-              lineHeight: "1.4",
+              fontSize: "13px",
+              color: "#374151",
+              lineHeight: "1.5",
               overflow: "hidden",
               display: "-webkit-box",
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 4,
               WebkitBoxOrient: "vertical" as const,
             }}
           >
@@ -236,7 +233,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         {hasSubScores && (
           <div
             style={{
-              marginTop: "2px",
+              marginTop: "4px",
               display: "flex",
               flexDirection: "column",
               gap: "2px",
@@ -249,13 +246,13 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           </div>
         )}
 
-        {/* Pitch */}
+        {/* Pitch (AI-generated segment angle) */}
         {pitch && (
           <p
             style={{
-              fontSize: "11px",
-              color: "#4b5563",
-              marginTop: "2px",
+              fontSize: "12px",
+              color: "#6b7280",
+              marginTop: "4px",
               fontStyle: "italic",
               lineHeight: "1.4",
               borderLeft: "2px solid #3b82f6",
