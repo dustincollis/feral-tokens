@@ -12,62 +12,19 @@ import { ScriptPanel } from "@/components/script/ScriptPanel";
 import { CollectionsPanel } from "@/components/collections/CollectionsPanel";
 import { generateScript } from "@/lib/api";
 
-type CenterPanel = "inbox" | "collections" | "script";
+type Tab = "inbox" | "collections" | "script";
 
-function VerticalTab({
-  label,
-  onClick,
-  color,
-  side,
-}: {
-  label: string;
-  onClick: () => void;
-  color: string;
-  side: "left" | "right";
-}) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        width: "36px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f9fafb",
-        borderLeft: side === "right" ? "1px solid #e5e7eb" : "none",
-        borderRight: side === "left" ? "1px solid #e5e7eb" : "none",
-        cursor: "pointer",
-        flexShrink: 0,
-        transition: "background-color 0.15s ease",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
-    >
-      <span
-        style={{
-          writingMode: "vertical-rl",
-          textOrientation: "mixed",
-          transform: side === "left" ? "rotate(180deg)" : "none",
-          fontSize: "12px",
-          fontWeight: 600,
-          color,
-          letterSpacing: "1px",
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
-          userSelect: "none",
-        }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
+const TABS: { key: Tab; label: string; color: string }[] = [
+  { key: "inbox", label: "Content Inbox", color: "#3b82f6" },
+  { key: "collections", label: "Collections", color: "#7c3aed" },
+  { key: "script", label: "Script", color: "#22c55e" },
+];
 
 export default function Home() {
   const [episodePosts, setEpisodePosts] = useState<UnifiedPost[]>([]);
   const [script, setScript] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [centerPanel, setCenterPanel] = useState<CenterPanel>("inbox");
+  const [activeTab, setActiveTab] = useState<Tab>("inbox");
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(
     PROVIDER_OPTIONS[0]
   );
@@ -83,7 +40,7 @@ export default function Home() {
 
   function handleLoadCollection(posts: UnifiedPost[]) {
     setEpisodePosts(posts);
-    setCenterPanel("inbox");
+    setActiveTab("inbox");
   }
 
   function handleRemove(postId: string) {
@@ -102,7 +59,7 @@ export default function Home() {
   async function handleGenerateScript() {
     if (episodePosts.length === 0) return;
     setGenerating(true);
-    setCenterPanel("script");
+    setActiveTab("script");
     try {
       const result = await generateScript(
         episodePosts.map((p) => p.id),
@@ -129,17 +86,7 @@ export default function Home() {
         overflow: "hidden",
       }}
     >
-      {/* Left tab: Post Inbox (only when inbox is not center) */}
-      {centerPanel !== "inbox" && (
-        <VerticalTab
-          label="Content Inbox"
-          onClick={() => setCenterPanel("inbox")}
-          color="#3b82f6"
-          side="left"
-        />
-      )}
-
-      {/* Center stage */}
+      {/* Left: Tab bar + content */}
       <div
         style={{
           flex: 1,
@@ -150,59 +97,102 @@ export default function Home() {
           borderRight: "1px solid #e5e7eb",
         }}
       >
-        {centerPanel === "inbox" && (
-          <>
-            <div
-              style={{
-                padding: "12px 16px",
-                borderBottom: "1px solid #e5e7eb",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <h1
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                    color: "#111827",
-                  }}
-                >
-                  Feral Tokens
-                </h1>
-                <p style={{ fontSize: "12px", color: "#6b7280" }}>
-                  Content Inbox
-                </p>
-              </div>
-              <a
-                href="/settings"
-                style={{ fontSize: "12px", color: "#3b82f6" }}
+        {/* Tab bar */}
+        <div
+          style={{
+            display: "flex",
+            borderBottom: "1px solid #e5e7eb",
+            backgroundColor: "#fafafa",
+            flexShrink: 0,
+          }}
+        >
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "13px",
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? tab.color : "#6b7280",
+                  backgroundColor: isActive ? "white" : "transparent",
+                  border: "none",
+                  borderBottom: isActive
+                    ? `2px solid ${tab.color}`
+                    : "2px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  position: "relative",
+                  marginBottom: "-1px",
+                }}
               >
-                Settings
-              </a>
-            </div>
+                {tab.label}
+                {tab.key === "script" && script && !isActive && (
+                  <span
+                    style={{
+                      marginLeft: "6px",
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      backgroundColor: "#22c55e",
+                      display: "inline-block",
+                    }}
+                  />
+                )}
+                {tab.key === "collections" && !isActive && (
+                  <span
+                    style={{
+                      marginLeft: "6px",
+                      fontSize: "11px",
+                      color: "#9ca3af",
+                    }}
+                  >
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <div style={{ flex: 1 }} />
+          <a
+            href="/settings"
+            style={{
+              fontSize: "12px",
+              color: "#3b82f6",
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            Settings
+          </a>
+        </div>
+
+        {/* Tab content */}
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          {activeTab === "inbox" && (
             <PostInbox
               onAddToEpisode={handleAddToEpisode}
               episodePostIds={episodePosts.map((p) => p.id)}
             />
-          </>
-        )}
+          )}
 
-        {centerPanel === "collections" && (
-          <CollectionsPanel
-            onLoadCollection={handleLoadCollection}
-            selectedProvider={selectedProvider}
-            onProviderChange={setSelectedProvider}
-          />
-        )}
+          {activeTab === "collections" && (
+            <CollectionsPanel
+              onLoadCollection={handleLoadCollection}
+              selectedProvider={selectedProvider}
+              onProviderChange={setSelectedProvider}
+            />
+          )}
 
-        {centerPanel === "script" && (
-          <ScriptPanel script={script} onScriptChange={setScript} />
-        )}
+          {activeTab === "script" && (
+            <ScriptPanel script={script} onScriptChange={setScript} />
+          )}
+        </div>
       </div>
 
-      {/* Episode Builder - always visible at 25% */}
+      {/* Right: Episode Builder - always visible at 25% */}
       <div
         style={{
           width: "25%",
@@ -210,7 +200,6 @@ export default function Home() {
           display: "flex",
           flexDirection: "column",
           backgroundColor: "white",
-          borderRight: "1px solid #e5e7eb",
           overflow: "hidden",
           flexShrink: 0,
         }}
@@ -224,32 +213,6 @@ export default function Home() {
           selectedProvider={selectedProvider}
           onProviderChange={setSelectedProvider}
         />
-      </div>
-
-      {/* Right tabs: Collections and Script (only when not active in center) */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          flexShrink: 0,
-        }}
-      >
-        {centerPanel !== "collections" && (
-          <VerticalTab
-            label="Collections"
-            onClick={() => setCenterPanel("collections")}
-            color="#7c3aed"
-            side="right"
-          />
-        )}
-        {centerPanel !== "script" && (
-          <VerticalTab
-            label="Script"
-            onClick={() => setCenterPanel("script")}
-            color={script ? "#22c55e" : "#9ca3af"}
-            side="right"
-          />
-        )}
       </div>
     </div>
   );
