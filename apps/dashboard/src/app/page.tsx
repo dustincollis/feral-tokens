@@ -13,12 +13,6 @@ import { generateScript } from "@/lib/api";
 
 type Panel = "inbox" | "builder" | "script";
 
-const PANEL_LABELS: Record<Panel, string> = {
-  inbox: "Content Inbox",
-  builder: "Episode Builder",
-  script: "Script",
-};
-
 export default function Home() {
   const [episodePosts, setEpisodePosts] = useState<UnifiedPost[]>([]);
   const [script, setScript] = useState("");
@@ -77,31 +71,17 @@ export default function Home() {
   }
 
   function panelStyle(panel: Panel, isLast: boolean) {
+    const isActive = panel === activePanel;
     return {
       width: getWidth(panel),
       height: "100vh" as const,
       display: "flex" as const,
       flexDirection: "column" as const,
-      backgroundColor: "white",
+      backgroundColor: isActive ? "white" : "#fafafa",
       borderRight: isLast ? "none" : "1px solid #e5e7eb",
       overflow: "hidden" as const,
-      transition: "width 0.25s ease",
-      position: "relative" as const,
-    };
-  }
-
-  function tabStyle(panel: Panel) {
-    const isActive = panel === activePanel;
-    return {
-      padding: "8px 16px",
-      fontSize: "12px",
-      fontWeight: isActive ? ("600" as const) : ("400" as const),
-      color: isActive ? "#111827" : "#9ca3af",
-      cursor: "pointer" as const,
-      borderBottom: isActive ? "2px solid #3b82f6" : "2px solid transparent",
-      whiteSpace: "nowrap" as const,
-      overflow: "hidden" as const,
-      textOverflow: "ellipsis" as const,
+      transition: "width 0.25s ease, background-color 0.25s ease",
+      cursor: isActive ? "default" : "pointer",
     };
   }
 
@@ -125,25 +105,29 @@ export default function Home() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            cursor: activePanel !== "inbox" ? "pointer" : "default",
           }}
         >
           <div>
             <h1
               style={{
-                fontSize: activePanel === "inbox" ? "18px" : "14px",
+                fontSize: activePanel === "inbox" ? "18px" : "13px",
                 fontWeight: "bold",
                 color: "#111827",
                 transition: "font-size 0.25s ease",
+                whiteSpace: "nowrap",
               }}
             >
               Feral Tokens
             </h1>
-            {activePanel === "inbox" && (
-              <p style={{ fontSize: "12px", color: "#6b7280" }}>
-                Content Inbox
-              </p>
-            )}
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Content Inbox
+            </p>
           </div>
           {activePanel === "inbox" && (
             <a
@@ -155,17 +139,10 @@ export default function Home() {
             </a>
           )}
         </div>
-        {activePanel === "inbox" ? (
-          <PostInbox
-            onAddToEpisode={handleAddToEpisode}
-            episodePostIds={episodePosts.map((p) => p.id)}
-          />
-        ) : (
-          <CollapsedHint
-            label="Inbox"
-            count={undefined}
-          />
-        )}
+        <PostInbox
+          onAddToEpisode={handleAddToEpisode}
+          episodePostIds={episodePosts.map((p) => p.id)}
+        />
       </div>
 
       {/* Builder Panel */}
@@ -173,52 +150,15 @@ export default function Home() {
         style={panelStyle("builder", false)}
         onClick={() => activePanel !== "builder" && setActivePanel("builder")}
       >
-        <div
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid #e5e7eb",
-            cursor: activePanel !== "builder" ? "pointer" : "default",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: activePanel === "builder" ? "16px" : "14px",
-              fontWeight: "600",
-              color: activePanel === "builder" ? "#111827" : "#6b7280",
-              transition: "font-size 0.25s ease",
-            }}
-          >
-            Episode Builder
-            {episodePosts.length > 0 && (
-              <span
-                style={{
-                  marginLeft: "8px",
-                  fontSize: "12px",
-                  color: "#3b82f6",
-                  fontWeight: "500",
-                }}
-              >
-                {episodePosts.length} bits
-              </span>
-            )}
-          </h2>
-        </div>
-        {activePanel === "builder" ? (
-          <EpisodeBuilder
-            posts={episodePosts}
-            onRemove={handleRemove}
-            onReorder={handleReorder}
-            onGenerateScript={handleGenerateScript}
-            generating={generating}
-            selectedProvider={selectedProvider}
-            onProviderChange={setSelectedProvider}
-          />
-        ) : (
-          <CollapsedHint
-            label="Builder"
-            count={episodePosts.length > 0 ? episodePosts.length : undefined}
-          />
-        )}
+        <EpisodeBuilder
+          posts={episodePosts}
+          onRemove={handleRemove}
+          onReorder={handleReorder}
+          onGenerateScript={handleGenerateScript}
+          generating={generating}
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
+        />
       </div>
 
       {/* Script Panel */}
@@ -226,112 +166,8 @@ export default function Home() {
         style={panelStyle("script", true)}
         onClick={() => activePanel !== "script" && setActivePanel("script")}
       >
-        <div
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid #e5e7eb",
-            cursor: activePanel !== "script" ? "pointer" : "default",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: activePanel === "script" ? "16px" : "14px",
-              fontWeight: "600",
-              color: activePanel === "script" ? "#111827" : "#6b7280",
-              transition: "font-size 0.25s ease",
-            }}
-          >
-            Script
-            {script && (
-              <span
-                style={{
-                  marginLeft: "8px",
-                  fontSize: "12px",
-                  color: "#22c55e",
-                  fontWeight: "500",
-                }}
-              >
-                ready
-              </span>
-            )}
-          </h2>
-        </div>
-        {activePanel === "script" ? (
-          <ScriptPanel script={script} onScriptChange={setScript} />
-        ) : (
-          <CollapsedHint
-            label="Script"
-            count={undefined}
-            ready={!!script}
-          />
-        )}
+        <ScriptPanel script={script} onScriptChange={setScript} />
       </div>
-    </div>
-  );
-}
-
-function CollapsedHint({
-  label,
-  count,
-  ready,
-}: {
-  label: string;
-  count?: number;
-  ready?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "8px",
-        color: "#d1d5db",
-        cursor: "pointer",
-      }}
-    >
-      <span
-        style={{
-          fontSize: "13px",
-          writingMode: "vertical-rl",
-          textOrientation: "mixed",
-          letterSpacing: "2px",
-          textTransform: "uppercase",
-          color: "#d1d5db",
-        }}
-      >
-        {label}
-      </span>
-      {count !== undefined && (
-        <span
-          style={{
-            fontSize: "11px",
-            backgroundColor: "#3b82f6",
-            color: "white",
-            borderRadius: "999px",
-            padding: "2px 8px",
-            fontWeight: "600",
-          }}
-        >
-          {count}
-        </span>
-      )}
-      {ready && (
-        <span
-          style={{
-            fontSize: "11px",
-            backgroundColor: "#22c55e",
-            color: "white",
-            borderRadius: "999px",
-            padding: "2px 8px",
-            fontWeight: "600",
-          }}
-        >
-          ✓
-        </span>
-      )}
     </div>
   );
 }

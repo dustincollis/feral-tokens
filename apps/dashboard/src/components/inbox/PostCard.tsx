@@ -15,7 +15,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   creepy: { bg: "#fde2e2", text: "#991b1b" },
   culture: { bg: "#dbeafe", text: "#1e40af" },
   other: { bg: "#f3f4f6", text: "#374151" },
-  // Legacy categories (in case old data lingers)
+  // Legacy categories
   funny: { bg: "#fce7f3", text: "#9d174d" },
   concerning: { bg: "#fde2e2", text: "#991b1b" },
   meta: { bg: "#dbeafe", text: "#1e40af" },
@@ -100,39 +100,72 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         marginBottom: "12px",
         backgroundColor: "white",
         boxShadow: selected ? "0 4px 6px rgba(0,0,0,0.1)" : "none",
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "stretch",
       }}
     >
+      {/* Thumbnail */}
       {post.thumbnail_url ? (
-        <img
-          src={post.thumbnail_url}
-          alt={post.title}
-          style={{ width: "100%", height: "auto", display: "block" }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
+        <div
+          style={{
+            width: "120px",
+            minWidth: "120px",
+            maxWidth: "120px",
+            backgroundColor: "#f3f4f6",
+            overflow: "hidden",
+            flexShrink: 0,
           }}
-        />
+        >
+          <img
+            src={post.thumbnail_url}
+            alt={post.title}
+            style={{
+              width: "120px",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).parentElement!.style.display = "none";
+            }}
+          />
+        </div>
       ) : (
         <div
           style={{
-            width: "100%",
-            height: "80px",
+            width: "120px",
+            minWidth: "120px",
             backgroundColor: "#f3f4f6",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#9ca3af",
-            fontSize: "12px",
+            color: "#d1d5db",
+            fontSize: "11px",
+            flexShrink: 0,
           }}
         >
           No image
         </div>
       )}
-      <div style={{ padding: "12px" }}>
+
+      {/* Content */}
+      <div
+        style={{
+          flex: 1,
+          padding: "10px 12px",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+        }}
+      >
+        {/* Top row: badges */}
         <div
           style={{
             display: "flex",
-            gap: "8px",
-            marginBottom: "8px",
+            gap: "6px",
+            alignItems: "center",
             flexWrap: "wrap",
           }}
         >
@@ -142,7 +175,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
               fontWeight: "bold",
               color: "white",
               backgroundColor: scoreColor,
-              padding: "2px 8px",
+              padding: "1px 8px",
               borderRadius: "999px",
             }}
           >
@@ -152,7 +185,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
             <span
               style={{
                 fontSize: "11px",
-                padding: "2px 8px",
+                padding: "1px 8px",
                 borderRadius: "999px",
                 backgroundColor: catColors.bg,
                 color: catColors.text,
@@ -162,29 +195,36 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
               {post.category}
             </span>
           )}
+          <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto" }}>
+            {post.platform}
+          </span>
         </div>
 
+        {/* Title */}
         <p
           style={{
-            fontSize: "14px",
+            fontSize: "13px",
             fontWeight: "500",
-            marginBottom: "4px",
             lineHeight: "1.4",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical" as const,
           }}
         >
           {post.title}
         </p>
 
+        {/* Body preview */}
         {post.body && (
           <p
             style={{
               fontSize: "12px",
               color: "#6b7280",
-              marginBottom: "4px",
-              lineHeight: "1.5",
+              lineHeight: "1.4",
               overflow: "hidden",
               display: "-webkit-box",
-              WebkitLineClamp: 3,
+              WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical" as const,
             }}
           >
@@ -192,15 +232,14 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           </p>
         )}
 
-        <p style={{ fontSize: "12px", color: "#6b7280" }}>{post.platform}</p>
-
+        {/* Sub-scores */}
         {hasSubScores && (
           <div
             style={{
-              marginTop: "8px",
+              marginTop: "2px",
               display: "flex",
               flexDirection: "column",
-              gap: "3px",
+              gap: "2px",
             }}
           >
             <ScoreBar label="C" value={commentary} />
@@ -210,14 +249,15 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           </div>
         )}
 
+        {/* Pitch */}
         {pitch && (
           <p
             style={{
-              fontSize: "12px",
+              fontSize: "11px",
               color: "#4b5563",
-              marginTop: "8px",
+              marginTop: "2px",
               fontStyle: "italic",
-              lineHeight: "1.5",
+              lineHeight: "1.4",
               borderLeft: "2px solid #3b82f6",
               paddingLeft: "8px",
             }}
@@ -226,13 +266,12 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           </p>
         )}
 
-        {/* Legacy support: show old reason if no pitch and no sub-scores */}
+        {/* Legacy reason */}
         {!pitch && !hasSubScores && sd?.reason && (
           <p
             style={{
               fontSize: "11px",
               color: "#9ca3af",
-              marginTop: "4px",
               fontStyle: "italic",
             }}
           >
