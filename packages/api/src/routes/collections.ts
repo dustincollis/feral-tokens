@@ -25,7 +25,7 @@ const COLLECTIONS_SYSTEM_PROMPT = [
   "   first, strongest at 60-70%).",
   "",
   "2. THEMED COLLECTIONS: 2-4 themed mini-collections of 3-5 posts each, based on what",
-  "   naturally clusters in the current batch. Examples: 'companion cringe', 'AI behavior'",
+  "   naturally clusters in the current batch. Examples: 'companion cringe', 'AI behavior',",
   "   'cursed images', 'platform drama'. Only suggest a theme if there are at least 3",
   "   strong posts that fit it. Each themed collection could be a standalone Short or a",
   "   focused video.",
