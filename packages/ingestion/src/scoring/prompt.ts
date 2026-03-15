@@ -42,6 +42,8 @@ export function buildScoringPrompt(posts: Partial<UnifiedPost>[]): string {
     "- category: string (one of the categories above)",
     "- reason: string (one sentence explaining the score)",
     "",
+    "Where provided, images are included after the post list to help you score visual content accurately.",
+    "",
     "Posts to score:",
     postsJson,
   ].join("\n");
