@@ -37,39 +37,35 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           : "border-gray-200 hover:border-gray-400"
       }`}
     >
-      {post.thumbnail_url && (
+      {post.thumbnail_url ? (
         <img
           src={post.thumbnail_url}
           alt={post.title}
-          className="w-full h-32 object-cover"
+          className="w-full h-40 object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
         />
-      )}
-      {!post.thumbnail_url && (
-        <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+      ) : (
+        <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
           No image
         </div>
       )}
       <div className="p-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <span
-            className={`text-xs font-bold text-white px-2 py-0.5 rounded-full ${scoreColor}`}
-          >
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <span className={`text-xs font-bold text-white px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>
             {score.toFixed(1)}
           </span>
           {post.category && (
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                categoryColors[post.category] ?? "bg-gray-100 text-gray-800"
-              }`}
-            >
+            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${categoryColors[post.category] ?? "bg-gray-100 text-gray-800"}`}>
               {post.category}
             </span>
           )}
         </div>
-        <p className="text-sm font-medium line-clamp-2">{post.title}</p>
-        <p className="text-xs text-gray-500 mt-1">{post.platform}</p>
+        <p className="text-sm font-medium leading-snug mb-1">{post.title}</p>
+        <p className="text-xs text-gray-500">{post.platform}</p>
         {post.score_data && (
-          <p className="text-xs text-gray-400 mt-1 line-clamp-2 italic">
+          <p className="text-xs text-gray-400 mt-1 italic line-clamp-2">
             {(post.score_data as any).reason}
           </p>
         )}
@@ -77,3 +73,13 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
     </div>
   );
 }
+```
+
+Also open `apps/dashboard/src/components/inbox/PostInbox.tsx` and find the grid class:
+```
+grid grid-cols-2 gap-3
+```
+
+Replace it with:
+```
+grid grid-cols-1 gap-3
