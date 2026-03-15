@@ -109,9 +109,9 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
       {post.thumbnail_url ? (
         <div
           style={{
-            width: "240px",
-            minWidth: "240px",
-            maxWidth: "240px",
+            width: "320px",
+            minWidth: "320px",
+            maxWidth: "320px",
             backgroundColor: "#f3f4f6",
             overflow: "hidden",
             flexShrink: 0,
@@ -121,7 +121,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
             src={post.thumbnail_url}
             alt={post.title}
             style={{
-              width: "240px",
+              width: "320px",
               height: "100%",
               objectFit: "cover",
               display: "block",
@@ -134,8 +134,8 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
       ) : (
         <div
           style={{
-            width: "240px",
-            minWidth: "240px",
+            width: "320px",
+            minWidth: "320px",
             backgroundColor: "#f3f4f6",
             display: "flex",
             alignItems: "center",
@@ -203,7 +203,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         {/* Title */}
         <p
           style={{
-            fontSize: "14px",
+            fontSize: "20px",
             fontWeight: "600",
             lineHeight: "1.4",
             color: "#111827",
@@ -216,7 +216,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         {post.body && (
           <p
             style={{
-              fontSize: "13px",
+              fontSize: "18px",
               color: "#374151",
               lineHeight: "1.5",
               overflow: "hidden",
