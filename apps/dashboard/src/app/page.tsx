@@ -47,13 +47,23 @@ export default function Home() {
     }
   }
 
+  const colStyle = {
+    width: "33.333%",
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column" as const,
+    backgroundColor: "white",
+    borderRight: "1px solid #e5e7eb",
+    overflow: "hidden",
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="w-1/3 border-r bg-white flex flex-col">
-        <div className="p-4 border-b">
-          <h1 className="text-lg font-bold text-gray-900">Feral Tokens</h1>
-          <p className="text-xs text-gray-500">Content Inbox</p>
-          <a href="/settings" className="text-xs text-blue-500 hover:underline mt-1">Settings</a>
+    <div style={{ display: "flex", height: "100vh", backgroundColor: "#f9fafb" }}>
+      <div style={colStyle}>
+        <div style={{ padding: "16px", borderBottom: "1px solid #e5e7eb" }}>
+          <h1 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827" }}>Feral Tokens</h1>
+          <p style={{ fontSize: "12px", color: "#6b7280" }}>Content Inbox</p>
+          <a href="/settings" style={{ fontSize: "12px", color: "#3b82f6" }}>Settings</a>
         </div>
         <PostInbox
           onAddToEpisode={handleAddToEpisode}
@@ -61,7 +71,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="w-1/3 border-r bg-white flex flex-col">
+      <div style={colStyle}>
         <EpisodeBuilder
           posts={episodePosts}
           onRemove={handleRemove}
@@ -71,7 +81,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="w-1/3 bg-white flex flex-col">
+      <div style={{ ...colStyle, borderRight: "none" }}>
         <ScriptPanel script={script} onScriptChange={setScript} />
       </div>
     </div>

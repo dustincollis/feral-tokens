@@ -22,21 +22,6 @@ export function PostInbox({ onAddToEpisode, episodePostIds }: PostInboxProps) {
 
   useEffect(() => {
     fetchPosts();
-
-    const channel = supabase
-      .channel("posts")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "posts", filter: "score=gte.7" },
-        (payload) => {
-          setPosts((prev) => [payload.new as UnifiedPost, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [platform, category, minScore]);
 
   async function fetchPosts() {
@@ -58,56 +43,33 @@ export function PostInbox({ onAddToEpisode, episodePostIds }: PostInboxProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex gap-2 p-4 border-b flex-wrap">
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          className="text-sm border rounded px-2 py-1"
-        >
-          {PLATFORMS.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", gap: "8px", padding: "12px", borderBottom: "1px solid #e5e7eb", flexWrap: "wrap" }}>
+        <select value={platform} onChange={(e) => setPlatform(e.target.value)} style={{ fontSize: "13px", border: "1px solid #d1d5db", borderRadius: "4px", padding: "2px 8px" }}>
+          {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="text-sm border rounded px-2 py-1"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ fontSize: "13px", border: "1px solid #d1d5db", borderRadius: "4px", padding: "2px 8px" }}>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <div className="flex items-center gap-1 text-sm">
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px" }}>
           <span>Min score:</span>
-          <input
-            type="number"
-            min={0}
-            max={10}
-            step={0.5}
-            value={minScore}
-            onChange={(e) => setMinScore(parseFloat(e.target.value))}
-            className="border rounded px-2 py-1 w-16"
-          />
+          <input type="number" min={0} max={10} step={0.5} value={minScore} onChange={(e) => setMinScore(parseFloat(e.target.value))} style={{ border: "1px solid #d1d5db", borderRadius: "4px", padding: "2px 4px", width: "56px" }} />
         </div>
-        <button
-          onClick={fetchPosts}
-          className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded"
-        >
+        <button onClick={fetchPosts} style={{ fontSize: "13px", backgroundColor: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: "4px", padding: "2px 12px", cursor: "pointer" }}>
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
           Loading posts...
         </div>
       ) : posts.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
           No posts found
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1">
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
           {posts.map((post) => (
             <PostCard
               key={post.id}
