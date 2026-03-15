@@ -79,7 +79,7 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 mt-1">Manage sources and trigger scrapes</p>
           </div>
           <div className="flex gap-3">
-            
+            <a
               href="/"
               className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded"
             >
