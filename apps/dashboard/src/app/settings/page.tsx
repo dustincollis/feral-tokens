@@ -83,7 +83,7 @@ export default function SettingsPage() {
               href="/"
               className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded"
             >
-              ← Back to Dashboard
+              Back to Dashboard
             </a>
             <button
               onClick={handleScrapeAll}
