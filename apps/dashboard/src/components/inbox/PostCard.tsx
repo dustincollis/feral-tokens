@@ -29,11 +29,6 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         <img
           src={post.thumbnail_url}
           alt={post.title}
-          {post.body && (
-            <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", marginBottom: "4px", lineHeight: "1.5", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-              {post.body}
-            </p>
-          )}
           style={{ width: "100%", height: "auto", display: "block" }}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
@@ -56,6 +51,11 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           )}
         </div>
         <p style={{ fontSize: "14px", fontWeight: "500", marginBottom: "4px", lineHeight: "1.4" }}>{post.title}</p>
+        {post.body && (
+          <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px", lineHeight: "1.5", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const }}>
+            {post.body}
+          </p>
+        )}
         <p style={{ fontSize: "12px", color: "#6b7280" }}>{post.platform}</p>
         {post.score_data && (
           <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px", fontStyle: "italic" }}>
