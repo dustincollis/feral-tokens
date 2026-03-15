@@ -21,46 +21,38 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   meta: { bg: "#dbeafe", text: "#1e40af" },
 };
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const pct = (value / 10) * 100;
-  const barColor =
+function ScoreBox({ label, value }: { label: string; value: number }) {
+  const color =
     value >= 8 ? "#22c55e" : value >= 6 ? "#eab308" : value >= 4 ? "#f97316" : "#dc2626";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-      <span
-        style={{
-          fontSize: "10px",
-          color: "#9ca3af",
-          width: "12px",
-          textAlign: "right",
-          fontWeight: 600,
-        }}
-      >
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "2px",
+        flex: 1,
+      }}
+    >
+      <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 500 }}>
         {label}
       </span>
       <div
         style={{
-          flex: 1,
-          height: "4px",
-          backgroundColor: "#f3f4f6",
-          borderRadius: "2px",
-          overflow: "hidden",
+          width: "100%",
+          padding: "4px 0",
+          borderRadius: "4px",
+          backgroundColor: color + "18",
+          border: `1px solid ${color}40`,
+          textAlign: "center",
+          fontSize: "13px",
+          fontWeight: 700,
+          color,
         }}
       >
-        <div
-          style={{
-            width: `${pct}%`,
-            height: "100%",
-            backgroundColor: barColor,
-            borderRadius: "2px",
-            transition: "width 0.3s ease",
-          }}
-        />
-      </div>
-      <span style={{ fontSize: "10px", color: "#6b7280", width: "16px" }}>
         {value}
-      </span>
+      </div>
     </div>
   );
 }
@@ -78,7 +70,6 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
 
   const catColors = CATEGORY_COLORS[post.category ?? "other"] ?? CATEGORY_COLORS.other;
 
-  // Read sub-scores from dedicated columns, fall back to score_data for legacy
   const sd = post.score_data as any;
   const commentary = (post as any).score_commentary ?? sd?.commentary ?? null;
   const visual = (post as any).score_visual ?? sd?.visual ?? null;
@@ -229,20 +220,21 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
           </p>
         )}
 
-        {/* Sub-scores */}
+        {/* Spacer between text and scores */}
+        <div style={{ marginTop: "12px" }} />
+
+        {/* Sub-scores as boxes */}
         {hasSubScores && (
           <div
             style={{
-              marginTop: "4px",
               display: "flex",
-              flexDirection: "column",
-              gap: "2px",
+              gap: "8px",
             }}
           >
-            <ScoreBar label="C" value={commentary} />
-            <ScoreBar label="V" value={visual} />
-            <ScoreBar label="R" value={virality} />
-            <ScoreBar label="T" value={topical} />
+            <ScoreBox label="Commentary" value={commentary} />
+            <ScoreBox label="Visual" value={visual} />
+            <ScoreBox label="Virality" value={virality} />
+            <ScoreBox label="Topical" value={topical} />
           </div>
         )}
 
@@ -252,7 +244,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
             style={{
               fontSize: "12px",
               color: "#6b7280",
-              marginTop: "4px",
+              marginTop: "8px",
               fontStyle: "italic",
               lineHeight: "1.4",
               borderLeft: "2px solid #3b82f6",
