@@ -12,7 +12,12 @@ export async function processImage(
 ): Promise<{ originalUrl: string; thumbnailUrl: string } | null> {
   try {
     const imageBuffer = await retry(async () => {
-      const response = await fetch(imageUrl);
+      const response = await fetch(imageUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://www.reddit.com/",
+        },
+      });
       if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
       return Buffer.from(await response.arrayBuffer());
     });
