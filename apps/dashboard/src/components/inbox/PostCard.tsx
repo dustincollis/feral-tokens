@@ -29,7 +29,7 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
         <img
           src={post.thumbnail_url}
           alt={post.title}
-          style={{ width: "100%", height: "160px", objectFit: "cover" }}
+          style={{ width: "100%", height: "auto", display: "block" }}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
           }}

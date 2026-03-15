@@ -11,7 +11,7 @@ export async function processImage(
   platform: string
 ): Promise<{ originalUrl: string; thumbnailUrl: string } | null> {
   try {
-    const imageBuffer = await retry(async () => {
+    const { buffer: imageBuffer, contentType } = await retry(async () => {
       const response = await fetch(imageUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -19,32 +19,37 @@ export async function processImage(
         },
       });
       if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
-      return Buffer.from(await response.arrayBuffer());
+      const ct = response.headers.get("content-type") ?? "";
+      if (!ct.startsWith("image/")) throw new Error(`Not an image: ${ct}`);
+      return { buffer: Buffer.from(await response.arrayBuffer()), contentType: ct };
     });
 
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "feral-tokens-"));
-    const originalPath = path.join(tempDir, "original");
     const thumbnailPath = path.join(tempDir, "thumbnail");
-
-    await fs.writeFile(originalPath, imageBuffer);
 
     await sharp(imageBuffer)
       .resize(400, null, { withoutEnlargement: true })
+      .jpeg({ quality: 85 })
       .toFile(thumbnailPath);
 
     const thumbnailBuffer = await fs.readFile(thumbnailPath);
-
     const storagePath = `${platform}/${externalId}`;
 
     const { error: originalError } = await supabase.storage
       .from("post-images")
-      .upload(`${storagePath}/original`, imageBuffer, { upsert: true });
+      .upload(`${storagePath}/original`, imageBuffer, { 
+        upsert: true,
+        contentType: contentType 
+      });
 
     if (originalError) throw originalError;
 
     const { error: thumbnailError } = await supabase.storage
       .from("post-images")
-      .upload(`${storagePath}/thumbnail`, thumbnailBuffer, { upsert: true });
+      .upload(`${storagePath}/thumbnail`, thumbnailBuffer, { 
+        upsert: true,
+        contentType: "image/jpeg"
+      });
 
     if (thumbnailError) throw thumbnailError;
 
