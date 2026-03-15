@@ -21,13 +21,18 @@ scrapeRoute.post("/", async (c) => {
     return c.json({ error: "Source not found" }, 404);
   }
 
-  await supabase.from("scrape_logs").insert({
-    source_id,
-    status: "running",
-  });
+  const { data: log } = await supabase
+    .from("scrape_logs")
+    .insert({ source_id, status: "running" })
+    .select()
+    .single();
 
-  return c.json({
-    message: "Scrape triggered",
-    source: source.name,
-  });
+  // Trigger ingestion in background
+  fetch(`http://localhost:${process.env.PORT ?? "3001"}/api/ingest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ source_id, log_id: log?.id }),
+  }).catch(() => {});
+
+  return c.json({ message: "Scrape triggered", source: source.name });
 });
