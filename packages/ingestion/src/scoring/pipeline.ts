@@ -12,7 +12,7 @@ export async function runScoringPipeline(): Promise<void> {
     .from("posts")
     .select("*")
     .eq("status", "pending_score")
-    .limit(100);
+    .limit(500);
 
   if (error) {
     console.error("Failed to fetch posts for scoring:", error);
