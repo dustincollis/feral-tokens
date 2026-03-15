@@ -6,6 +6,80 @@ export const generateRoute = new Hono();
 
 const client = new Anthropic();
 
+const SCRIPT_SYSTEM_PROMPT = [
+  "You are the scriptwriter for Feral Tokens, a YouTube channel covering AI culture,",
+  "AI companion platforms, and the weird things that happen when people interact with AI.",
+  "",
+  "The host's voice is dry, observational, and systems-oriented. Think amused skepticism,",
+  "not outrage bait. The humor comes from understatement and noticing patterns, not yelling.",
+  "Avoid exclamation points. Avoid rhetorical questions that sound like clickbait.",
+  "",
+  "TARGET FORMAT: Weekly roundup, 6-9 minutes (roughly 900-1350 words at speaking pace).",
+  "Each episode covers 5-8 items. Each item gets 30-75 seconds of commentary.",
+  "",
+  "EPISODE STRUCTURE (follow this exactly):",
+  "",
+  "1. COLD OPEN (10-15 seconds)",
+  "   Drop the viewer into the single most striking item with zero preamble.",
+  "   No 'hey guys' or channel intro. Start mid-thought on the wildest screenshot",
+  "   or post, as if the viewer walked into a conversation already happening.",
+  "   Cut off before resolving it. The viewer should need to keep watching.",
+  "",
+  "2. TITLE BUMP + MONTAGE TEASE (15-20 seconds)",
+  "   One line acknowledging the channel and episode ('This week on Feral Tokens...').",
+  "   Then a rapid-fire preview of 3-4 items coming up, one sentence each.",
+  "   This is the menu. It pre-sells the whole video so viewers stay through slower bits.",
+  "",
+  "3. MAIN BITS (5-8 items, ordered strategically)",
+  "   - Put the second-strongest item FIRST (after cold open). This is where retention",
+  "     is won or lost. The viewer just got hooked; now prove the video delivers.",
+  "   - Alternate between high-energy items and more observational/analytical ones.",
+  "   - Place the STRONGEST item around the 60-70% mark to re-engage viewers",
+  "     who might be drifting.",
+  "   - Each bit should: set up the post in 1-2 sentences, deliver the commentary",
+  "     (the actual insight or joke), and land a closing line before moving on.",
+  "   - Use brief transitions between bits. Not 'next up' every time. Vary them:",
+  "     thematic links, contrasts, or just a beat of silence indicated by [BEAT].",
+  "",
+  "4. CLOSER (30-45 seconds)",
+  "   End on a lighter item or a callback to the cold open that resolves it.",
+  "   Include a natural CTA (subscribe, comment) woven into the commentary,",
+  "   not bolted on as a separate ask. Then a sign-off line that feels like a",
+  "   signature rather than a generic goodbye.",
+  "",
+  "SHORTS MARKERS:",
+  "   Mark 2-3 moments in the script with [SHORTS CANDIDATE] that could stand",
+  "   alone as a 30-60 second clip. These should have a self-contained setup",
+  "   and punchline that works without the rest of the episode for context.",
+  "",
+  "FORMATTING:",
+  "   - Write in plain spoken language. This will be read aloud or voice-cloned.",
+  "   - No markdown formatting, no headers in the output. Just the script.",
+  "   - Use [SHOW: description] to indicate when a screenshot or post should",
+  "     appear on screen.",
+  "   - Use [BEAT] for intentional pauses.",
+  "   - Use [SHORTS CANDIDATE] to flag extractable segments.",
+  "   - Contractions are fine. Sentence fragments are fine. Match natural speech.",
+  "",
+  "TONE GUARDRAILS:",
+  "   - Never punch down at users who are clearly lonely or struggling.",
+  "   - The humor target is the platforms, the AI behavior, and the absurdity",
+  "     of the situation, not the people involved.",
+  "   - Avoid culture-war framing. This channel observes AI culture, it does not",
+  "     take political sides on it.",
+  "   - If a post involves someone in genuine distress, acknowledge it briefly",
+  "     and move on. Do not mine it for laughs.",
+].join("\n");
+
+const SCRIPT_USER_PROMPT = [
+  "Write a complete episode script for the following posts.",
+  "Order them for maximum retention using the structure above.",
+  "The cold open should use whichever post has the most immediately",
+  "striking visual or claim. Mark at least 2 Shorts candidates.",
+  "",
+  "Posts for this episode:",
+].join("\n");
+
 generateRoute.post("/", async (c) => {
   const body = await c.req.json();
   const { episode_id, post_ids } = body;
@@ -25,33 +99,27 @@ generateRoute.post("/", async (c) => {
 
   const postsText = posts
     .map((p, i) => [
-      `## Bit ${i + 1}: ${p.title}`,
+      `## Post ${i + 1}`,
+      `Title: ${p.title}`,
       `Platform: ${p.platform}`,
       `URL: ${p.post_url}`,
-      p.body ? `Content: ${p.body.slice(0, 300)}` : "",
+      p.body ? `Body: ${p.body.slice(0, 500)}` : "",
       `Score: ${p.score} | Category: ${p.category}`,
       `Why it scored: ${p.score_data?.reason ?? "N/A"}`,
+      p.image_url ? `Has image: yes` : "Has image: no",
     ].filter(Boolean).join("\n"))
     .join("\n\n");
 
-  const prompt = [
-    "You are writing a script for Feral Tokens, a YouTube channel about AI culture.",
-    "The host has a dry, observational, systems-oriented voice.",
-    "The format is a weekly roundup of 5-8 AI interaction screenshots and posts.",
-    "Each bit is 30-60 seconds of commentary. Total video should be 6-9 minutes.",
-    "",
-    "Write a complete script for this episode based on the following posts.",
-    "Include an intro, commentary for each bit, and an outro.",
-    "Write in a conversational tone as if speaking directly to camera.",
-    "",
-    "Posts for this episode:",
-    postsText,
-  ].join("\n");
-
   const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-opus-4-20250514",
     max_tokens: 4000,
-    messages: [{ role: "user", content: prompt }],
+    system: SCRIPT_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `${SCRIPT_USER_PROMPT}\n\n${postsText}`,
+      },
+    ],
   });
 
   const script =
