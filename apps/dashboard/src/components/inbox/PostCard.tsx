@@ -7,7 +7,7 @@ interface PostCardProps {
   selected: boolean;
   onSelect: (post: UnifiedPost) => void;
 }
-
+// comment
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   companion: { bg: "#ede9fe", text: "#6d28d9" },
   behavior: { bg: "#fef3c7", text: "#92400e" },
