@@ -56,3 +56,39 @@ export async function triggerScrape(sourceId: string) {
 export async function getSources() {
   return apiFetch("/api/sources");
 }
+
+export interface CollectionOptions {
+  provider?: string;
+  model?: string;
+  min_score?: number;
+}
+
+export interface ThemedCollection {
+  title: string;
+  angle: string;
+  post_ids: string[];
+  posts: any[];
+}
+
+export interface CollectionsResult {
+  weekly_roundup: {
+    title: string;
+    angle: string;
+    post_ids: string[];
+    posts: any[];
+  };
+  themed: ThemedCollection[];
+}
+
+export async function generateCollections(
+  options?: CollectionOptions
+): Promise<CollectionsResult> {
+  return apiFetch("/api/collections", {
+    method: "POST",
+    body: JSON.stringify({
+      provider: options?.provider,
+      model: options?.model,
+      min_score: options?.min_score,
+    }),
+  });
+}

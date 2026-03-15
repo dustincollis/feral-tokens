@@ -9,9 +9,10 @@ import {
   PROVIDER_OPTIONS,
 } from "@/components/builder/EpisodeBuilder";
 import { ScriptPanel } from "@/components/script/ScriptPanel";
+import { CollectionsPanel } from "@/components/collections/CollectionsPanel";
 import { generateScript } from "@/lib/api";
 
-type Panel = "inbox" | "builder" | "script";
+type Panel = "inbox" | "collections" | "builder" | "script";
 
 export default function Home() {
   const [episodePosts, setEpisodePosts] = useState<UnifiedPost[]>([]);
@@ -29,6 +30,11 @@ export default function Home() {
       }
       return [...prev, post];
     });
+  }
+
+  function handleLoadCollection(posts: UnifiedPost[]) {
+    setEpisodePosts(posts);
+    setActivePanel("builder");
   }
 
   function handleRemove(postId: string) {
@@ -66,8 +72,8 @@ export default function Home() {
   }
 
   function getWidth(panel: Panel): string {
-    if (panel === activePanel) return "60%";
-    return "20%";
+    if (panel === activePanel) return "52%";
+    return "16%";
   }
 
   function panelStyle(panel: Panel, isLast: boolean) {
@@ -142,6 +148,20 @@ export default function Home() {
         <PostInbox
           onAddToEpisode={handleAddToEpisode}
           episodePostIds={episodePosts.map((p) => p.id)}
+        />
+      </div>
+
+      {/* Collections Panel */}
+      <div
+        style={panelStyle("collections", false)}
+        onClick={() =>
+          activePanel !== "collections" && setActivePanel("collections")
+        }
+      >
+        <CollectionsPanel
+          onLoadCollection={handleLoadCollection}
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
         />
       </div>
 

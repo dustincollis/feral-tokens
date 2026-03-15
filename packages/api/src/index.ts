@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { scrapeRoute } from "./routes/scrape";
 import { scoreRoute } from "./routes/score";
 import { generateRoute } from "./routes/generate";
+import { collectionsRoute } from "./routes/collections";
 import { healthRoute } from "./routes/health";
 import { sourcesRoute } from "./routes/sources";
 import { authMiddleware } from "./middleware/auth";
@@ -22,6 +23,7 @@ app.use("/api/*", authMiddleware);
 app.route("/api/scrape", scrapeRoute);
 app.route("/api/score", scoreRoute);
 app.route("/api/generate", generateRoute);
+app.route("/api/collections", collectionsRoute);
 app.route("/api/sources", sourcesRoute);
 
 const port = parseInt(process.env.PORT ?? "3001");
