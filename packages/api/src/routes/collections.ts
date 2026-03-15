@@ -111,6 +111,22 @@ collectionsRoute.post("/", async (c) => {
       JSON.stringify(postsForPrompt, null, 2),
     ].join("\n");
 
+    // Helper to attach full post objects to collections
+    const postMap = new Map(posts.map((p) => [p.id, p]));
+    const enrichCollection = (postIds: string[]) =>
+      postIds.map((id) => postMap.get(id)).filter(Boolean);
+
+    const formatResult = (collections: any) => ({
+      weekly_roundup: {
+        ...collections.weekly_roundup,
+        posts: enrichCollection(collections.weekly_roundup.post_ids),
+      },
+      themed: collections.themed.map((t: any) => ({
+        ...t,
+        posts: enrichCollection(t.post_ids),
+      })),
+    });
+
     if (provider === "anthropic") {
       const message = await client.messages.create({
         model,
@@ -128,33 +144,14 @@ collectionsRoute.post("/", async (c) => {
         .trim();
 
       const collections = JSON.parse(clean);
-
-      // Attach full post objects to each collection so the dashboard has everything
-      const postMap = new Map(posts.map((p) => [p.id, p]));
-
-      const enrichCollection = (postIds: string[]) =>
-        postIds
-          .map((id) => postMap.get(id))
-          .filter(Boolean);
-
-      return c.json({
-        weekly_roundup: {
-          ...collections.weekly_roundup,
-          posts: enrichCollection(collections.weekly_roundup.post_ids),
-        },
-        themed: collections.themed.map((t: any) => ({
-          ...t,
-          posts: enrichCollection(t.post_ids),
-        })),
-      });
+      return c.json(formatResult(collections));
     } else if (provider === "xai") {
-      // xAI/Grok path
       const xaiKey = process.env.XAI_API_KEY;
       if (!xaiKey) {
         return c.json({ error: "XAI_API_KEY not configured" }, 500);
       }
 
-      const response = await fetch(
+      const xaiResponse = await fetch(
         "https://api.x.ai/v1/chat/completions",
         {
           method: "POST",
@@ -173,42 +170,25 @@ collectionsRoute.post("/", async (c) => {
         }
       );
 
-      if (!response.ok) {
-        const errText = await response.text();
+      if (!xaiResponse.ok) {
+        const errText = await xaiResponse.text();
         return c.json(
-          { error: `xAI API error: ${response.status}`, details: errText },
+          { error: `xAI API error: ${xaiResponse.status}`, details: errText },
           500
         );
       }
 
-      const data = await response.json();
-      const data = (await response.json()) as any;
+      const xaiData = (await xaiResponse.json()) as any;
+      const xaiResponseText =
+        xaiData.choices?.[0]?.message?.content ?? "";
 
-
-      const clean = responseText
+      const clean = xaiResponseText
         .replace(/```json/g, "")
         .replace(/```/g, "")
         .trim();
 
       const collections = JSON.parse(clean);
-
-      const postMap = new Map(posts.map((p) => [p.id, p]));
-
-      const enrichCollection = (postIds: string[]) =>
-        postIds
-          .map((id) => postMap.get(id))
-          .filter(Boolean);
-
-      return c.json({
-        weekly_roundup: {
-          ...collections.weekly_roundup,
-          posts: enrichCollection(collections.weekly_roundup.post_ids),
-        },
-        themed: collections.themed.map((t: any) => ({
-          ...t,
-          posts: enrichCollection(t.post_ids),
-        })),
-      });
+      return c.json(formatResult(collections));
     } else {
       return c.json({ error: `Unknown provider: ${provider}` }, 400);
     }
