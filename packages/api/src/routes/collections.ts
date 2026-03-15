@@ -182,7 +182,8 @@ collectionsRoute.post("/", async (c) => {
       }
 
       const data = await response.json();
-      const responseText = data.choices?.[0]?.message?.content ?? "";
+      const data = (await response.json()) as any;
+
 
       const clean = responseText
         .replace(/```json/g, "")
