@@ -53,6 +53,7 @@ export default function Home() {
         <div className="p-4 border-b">
           <h1 className="text-lg font-bold text-gray-900">Feral Tokens</h1>
           <p className="text-xs text-gray-500">Content Inbox</p>
+          <a href="/settings" className="text-xs text-blue-500 hover:underline mt-1">Settings →</a>
         </div>
         <PostInbox
           onAddToEpisode={handleAddToEpisode}

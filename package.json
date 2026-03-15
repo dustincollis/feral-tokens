@@ -3,17 +3,20 @@
     "private": true,
     "packageManager": "npm@10.9.2",
     "workspaces": [
-      "packages/*",
-      "apps/*"
+        "packages/*",
+        "apps/*"
     ],
     "scripts": {
-      "dev": "turbo dev",
-      "build": "turbo build",
-      "lint": "turbo lint",
-      "clean": "turbo clean"
+        "dev": "turbo dev",
+        "build": "turbo build",
+        "lint": "turbo lint",
+        "clean": "turbo clean"
     },
     "devDependencies": {
-      "turbo": "^2.0.0",
-      "typescript": "^5.4.0"
+        "turbo": "^2.0.0",
+        "typescript": "^5.4.0"
+    },
+    "dependencies": {
+        "dotenv": "^17.3.1"
     }
-  }
+}
