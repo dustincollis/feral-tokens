@@ -120,8 +120,7 @@ export default function SettingsPage() {
                   <div>
                     <p className="font-medium text-gray-900">{source.name}</p>
                     <p className="text-xs text-gray-400">
-                      {source.platform} ·{" "}
-                      {source.last_scraped_at
+                      {source.platform} {source.last_scraped_at
                         ? `Last scraped ${new Date(source.last_scraped_at).toLocaleString()}`
                         : "Never scraped"}
                     </p>
