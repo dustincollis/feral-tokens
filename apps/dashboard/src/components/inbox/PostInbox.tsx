@@ -107,7 +107,7 @@ export function PostInbox({ onAddToEpisode, episodePostIds }: PostInboxProps) {
           No posts found
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1">
           {posts.map((post) => (
             <PostCard
               key={post.id}

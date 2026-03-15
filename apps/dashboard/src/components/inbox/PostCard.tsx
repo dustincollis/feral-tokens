@@ -73,13 +73,3 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
     </div>
   );
 }
-```
-
-Also open `apps/dashboard/src/components/inbox/PostInbox.tsx` and find the grid class:
-```
-grid grid-cols-2 gap-3
-```
-
-Replace it with:
-```
-grid grid-cols-1 gap-3
