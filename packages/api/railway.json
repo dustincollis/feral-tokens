@@ -1,0 +1,11 @@
+{
+    "$schema": "https://railway.com/railway.schema.json",
+    "build": {
+      "builder": "NIXPACKS",
+      "buildCommand": "npm install && npm run build --workspace=@feral-tokens/shared && npm run build --workspace=@feral-tokens/api"
+    },
+    "deploy": {
+      "startCommand": "node packages/api/dist/index.js",
+      "restartPolicyType": "ON_FAILURE"
+    }
+  }
