@@ -10,13 +10,15 @@ import {
 } from "@/components/builder/EpisodeBuilder";
 import { ScriptPanel } from "@/components/script/ScriptPanel";
 import { CollectionsPanel } from "@/components/collections/CollectionsPanel";
-import { generateScript } from "@/lib/api";
+import { SavedCollectionsPanel } from "@/components/saved/SavedCollectionsPanel";
+import { generateScript, createSavedCollection } from "@/lib/api";
 
-type Tab = "inbox" | "collections" | "script";
+type Tab = "inbox" | "collections" | "saved" | "script";
 
 const TABS: { key: Tab; label: string; color: string }[] = [
   { key: "inbox", label: "Content Inbox", color: "#3b82f6" },
   { key: "collections", label: "Collections", color: "#7c3aed" },
+  { key: "saved", label: "Saved", color: "#f59e0b" },
   { key: "script", label: "Script", color: "#22c55e" },
 ];
 
@@ -28,6 +30,7 @@ export default function Home() {
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(
     PROVIDER_OPTIONS[0]
   );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   function handleAddToEpisode(post: UnifiedPost) {
     setEpisodePosts((prev) => {
@@ -41,6 +44,14 @@ export default function Home() {
   function handleLoadCollection(posts: UnifiedPost[]) {
     setEpisodePosts(posts);
     setActiveTab("inbox");
+  }
+
+  async function handleSaveCollection(name: string) {
+    await createSavedCollection(
+      name,
+      episodePosts.map((p) => p.id)
+    );
+    setRefreshKey((k) => k + 1);
   }
 
   function handleRemove(postId: string) {
@@ -175,6 +186,7 @@ export default function Home() {
             <PostInbox
               onAddToEpisode={handleAddToEpisode}
               episodePostIds={episodePosts.map((p) => p.id)}
+              refreshKey={refreshKey}
             />
           )}
 
@@ -183,6 +195,13 @@ export default function Home() {
               onLoadCollection={handleLoadCollection}
               selectedProvider={selectedProvider}
               onProviderChange={setSelectedProvider}
+            />
+          )}
+
+          {activeTab === "saved" && (
+            <SavedCollectionsPanel
+              onLoadCollection={handleLoadCollection}
+              refreshKey={refreshKey}
             />
           )}
 
@@ -213,6 +232,7 @@ export default function Home() {
           script={script}
           selectedProvider={selectedProvider}
           onProviderChange={setSelectedProvider}
+          onSaveCollection={handleSaveCollection}
         />
       </div>
     </div>

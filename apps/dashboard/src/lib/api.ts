@@ -80,6 +80,30 @@ export interface CollectionsResult {
   themed: ThemedCollection[];
 }
 
+// Saved Collections
+export async function listSavedCollections() {
+  return apiFetch("/api/saved-collections");
+}
+
+export async function getSavedCollection(id: string) {
+  return apiFetch(`/api/saved-collections/${id}`);
+}
+
+export async function createSavedCollection(name: string, postIds: string[], notes?: string) {
+  return apiFetch("/api/saved-collections", {
+    method: "POST",
+    body: JSON.stringify({ name, post_ids: postIds, notes }),
+  });
+}
+
+export async function deleteSavedCollection(id: string) {
+  return apiFetch(`/api/saved-collections/${id}`, { method: "DELETE" });
+}
+
+export async function getSavedCollectionPostMap(): Promise<Record<string, string[]>> {
+  return apiFetch("/api/saved-collections/post-map");
+}
+
 export async function generateCollections(
   options?: CollectionOptions
 ): Promise<CollectionsResult> {

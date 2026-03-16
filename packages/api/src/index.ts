@@ -8,6 +8,7 @@ import { generateRoute } from "./routes/generate";
 import { collectionsRoute } from "./routes/collections";
 import { healthRoute } from "./routes/health";
 import { sourcesRoute } from "./routes/sources";
+import { savedCollectionsRoute } from "./routes/saved-collections";
 import { authMiddleware } from "./middleware/auth";
 
 const app = new Hono();
@@ -25,6 +26,7 @@ app.route("/api/score", scoreRoute);
 app.route("/api/generate", generateRoute);
 app.route("/api/collections", collectionsRoute);
 app.route("/api/sources", sourcesRoute);
+app.route("/api/saved-collections", savedCollectionsRoute);
 
 const port = parseInt(process.env.PORT ?? "3001");
 

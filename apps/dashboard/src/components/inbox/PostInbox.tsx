@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
 import { supabase } from "@/lib/supabase";
+import { getSavedCollectionPostMap } from "@/lib/api";
 import { PostCard } from "./PostCard";
 
 interface PostInboxProps {
   onAddToEpisode: (post: UnifiedPost) => void;
   episodePostIds: string[];
+  refreshKey?: number;
 }
 
 const PLATFORMS = ["all", "reddit", "youtube", "x"];
@@ -38,17 +40,31 @@ const selectStyle = {
   backgroundColor: "white",
 };
 
-export function PostInbox({ onAddToEpisode, episodePostIds }: PostInboxProps) {
+export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostInboxProps) {
   const [posts, setPosts] = useState<UnifiedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [platform, setPlatform] = useState("all");
   const [category, setCategory] = useState("all");
   const [minScore, setMinScore] = useState(0);
   const [sortBy, setSortBy] = useState("score");
+  const [postCollectionMap, setPostCollectionMap] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     fetchPosts();
   }, [platform, category, minScore, sortBy]);
+
+  useEffect(() => {
+    fetchPostMap();
+  }, [refreshKey]);
+
+  async function fetchPostMap() {
+    try {
+      const map = await getSavedCollectionPostMap();
+      setPostCollectionMap(map);
+    } catch {
+      // Silently fail — badges are non-critical
+    }
+  }
 
   async function fetchPosts() {
     setLoading(true);
@@ -218,6 +234,7 @@ export function PostInbox({ onAddToEpisode, episodePostIds }: PostInboxProps) {
               post={post}
               selected={episodePostIds.includes(post.id)}
               onSelect={onAddToEpisode}
+              collectionIds={postCollectionMap[post.id]}
             />
           ))}
         </div>

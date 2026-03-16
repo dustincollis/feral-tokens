@@ -33,6 +33,7 @@ interface EpisodeBuilderProps {
   script: string;
   selectedProvider: ProviderOption;
   onProviderChange: (option: ProviderOption) => void;
+  onSaveCollection: (name: string) => Promise<void>;
 }
 
 function MiniScoreBox({ label, value }: { label: string; value: number }) {
@@ -80,9 +81,30 @@ export function EpisodeBuilder({
   script,
   selectedProvider,
   onProviderChange,
+  onSaveCollection,
 }: EpisodeBuilderProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!saveName.trim()) return;
+    setSaving(true);
+    try {
+      await onSaveCollection(saveName.trim());
+      setSaveSuccess(saveName.trim());
+      setShowSaveForm(false);
+      setSaveName("");
+      setTimeout(() => setSaveSuccess(null), 3000);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleDownload() {
     setDownloading(true);
@@ -135,6 +157,26 @@ export function EpisodeBuilder({
             >
               {downloading ? "Zipping..." : "↓ Zip"}
             </button>
+            <button
+              onClick={() => {
+                setSaveName(`Collection ${new Date().toLocaleDateString()}`);
+                setShowSaveForm(true);
+                setSaveSuccess(null);
+              }}
+              disabled={posts.length === 0}
+              style={{
+                fontSize: "11px",
+                padding: "3px 8px",
+                borderRadius: "4px",
+                border: "none",
+                cursor: posts.length === 0 ? "default" : "pointer",
+                backgroundColor: posts.length === 0 ? "#d1d5db" : "#f59e0b",
+                color: "white",
+                fontWeight: 500,
+              }}
+            >
+              Save
+            </button>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -159,6 +201,60 @@ export function EpisodeBuilder({
             ))}
           </select>
         </div>
+        {showSaveForm && (
+          <div style={{ display: "flex", gap: "4px", marginTop: "6px" }}>
+            <input
+              type="text"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+              placeholder="Collection name"
+              autoFocus
+              style={{
+                flex: 1,
+                fontSize: "11px",
+                border: "1px solid #e5e7eb",
+                borderRadius: "4px",
+                padding: "3px 6px",
+              }}
+            />
+            <button
+              onClick={handleSave}
+              disabled={saving || !saveName.trim()}
+              style={{
+                fontSize: "11px",
+                padding: "3px 8px",
+                borderRadius: "4px",
+                border: "none",
+                cursor: saving || !saveName.trim() ? "default" : "pointer",
+                backgroundColor: saving || !saveName.trim() ? "#d1d5db" : "#f59e0b",
+                color: "white",
+                fontWeight: 500,
+              }}
+            >
+              {saving ? "..." : "Save"}
+            </button>
+            <button
+              onClick={() => setShowSaveForm(false)}
+              style={{
+                fontSize: "11px",
+                padding: "3px 8px",
+                borderRadius: "4px",
+                border: "1px solid #e5e7eb",
+                cursor: "pointer",
+                backgroundColor: "white",
+                color: "#6b7280",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+        {saveSuccess && (
+          <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "4px" }}>
+            Saved as collection!
+          </div>
+        )}
       </div>
 
       {posts.length === 0 ? (

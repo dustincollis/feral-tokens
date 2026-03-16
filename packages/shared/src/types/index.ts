@@ -45,6 +45,16 @@ export interface UnifiedPost {
   updated_at: string;
 }
 
+export interface SavedCollection {
+  id: string;
+  short_id: string;
+  name: string;
+  post_ids: string[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SourceAdapter {
   fetch(config: SourceConfig, since: Date): Promise<RawPost[]>;
 }

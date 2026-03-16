@@ -8,6 +8,7 @@ interface PostCardProps {
   post: UnifiedPost;
   selected: boolean;
   onSelect: (post: UnifiedPost) => void;
+  collectionIds?: string[];
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
@@ -58,7 +59,7 @@ function ScoreBox({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function PostCard({ post, selected, onSelect }: PostCardProps) {
+export function PostCard({ post, selected, onSelect, collectionIds }: PostCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const score = post.score ?? 0;
@@ -195,6 +196,21 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
                 {post.category}
               </span>
             )}
+            {collectionIds && collectionIds.map((cid) => (
+              <span
+                key={cid}
+                style={{
+                  fontSize: "10px",
+                  padding: "1px 6px",
+                  borderRadius: "999px",
+                  backgroundColor: "#fef3c7",
+                  color: "#92400e",
+                  fontWeight: 600,
+                }}
+              >
+                {cid}
+              </span>
+            ))}
             <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto" }}>
               {(() => {
                 const url = (post as any).post_url as string | undefined;
