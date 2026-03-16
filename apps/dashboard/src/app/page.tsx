@@ -210,6 +210,7 @@ export default function Home() {
           onReorder={handleReorder}
           onGenerateScript={handleGenerateScript}
           generating={generating}
+          script={script}
           selectedProvider={selectedProvider}
           onProviderChange={setSelectedProvider}
         />

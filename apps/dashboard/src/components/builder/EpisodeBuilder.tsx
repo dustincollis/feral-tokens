@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
 import { ImageLightbox } from "@/components/shared/ImageLightbox";
+import { downloadEpisodePackage } from "@/lib/download";
 
 export interface ProviderOption {
   provider: string;
@@ -29,6 +30,7 @@ interface EpisodeBuilderProps {
   onReorder: (from: number, to: number) => void;
   onGenerateScript: () => void;
   generating: boolean;
+  script: string;
   selectedProvider: ProviderOption;
   onProviderChange: (option: ProviderOption) => void;
 }
@@ -75,10 +77,23 @@ export function EpisodeBuilder({
   onReorder,
   onGenerateScript,
   generating,
+  script,
   selectedProvider,
   onProviderChange,
 }: EpisodeBuilderProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      await downloadEpisodePackage(posts, script);
+    } catch (err) {
+      console.error("Download failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -87,13 +102,31 @@ export function EpisodeBuilder({
           <h2 className="font-semibold text-gray-700">
             Episode Builder ({posts.length} bits)
           </h2>
-          <button
-            onClick={onGenerateScript}
-            disabled={posts.length === 0 || generating}
-            className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-1.5 rounded"
-          >
-            {generating ? "Generating..." : "Generate Script"}
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={onGenerateScript}
+              disabled={posts.length === 0 || generating}
+              className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-1.5 rounded"
+            >
+              {generating ? "Generating..." : "Generate Script"}
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={!script || posts.length === 0 || downloading}
+              style={{
+                fontSize: "13px",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                border: "none",
+                cursor: !script || posts.length === 0 || downloading ? "default" : "pointer",
+                backgroundColor: !script || posts.length === 0 || downloading ? "#d1d5db" : "#22c55e",
+                color: "white",
+                fontWeight: 500,
+              }}
+            >
+              {downloading ? "Zipping..." : "↓ Package"}
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-gray-500">Model:</label>
