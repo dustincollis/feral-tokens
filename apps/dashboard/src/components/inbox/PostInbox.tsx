@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { UnifiedPost } from "@feral-tokens/shared";
 import { supabase } from "@/lib/supabase";
 import { getSavedCollectionPostMap } from "@/lib/api";
 import { PostCard } from "./PostCard";
+
+const PAGE_SIZE = 50;
 
 interface PostInboxProps {
   onAddToEpisode: (post: UnifiedPost) => void;
@@ -43,11 +45,14 @@ const selectStyle = {
 export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostInboxProps) {
   const [posts, setPosts] = useState<UnifiedPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [platform, setPlatform] = useState("all");
   const [category, setCategory] = useState("all");
   const [minScore, setMinScore] = useState(0);
   const [sortBy, setSortBy] = useState("score");
   const [postCollectionMap, setPostCollectionMap] = useState<Record<string, string[]>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -66,23 +71,54 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
     }
   }
 
-  async function fetchPosts() {
-    setLoading(true);
+  function buildQuery(offset: number) {
     let query = supabase
       .from("posts")
       .select("*")
       .eq("status", "scored")
       .gte("score", minScore)
       .order(sortBy, { ascending: false })
-      .limit(100);
+      .range(offset, offset + PAGE_SIZE - 1);
 
     if (platform !== "all") query = query.eq("platform", platform);
     if (category !== "all") query = query.eq("category", category);
+    return query;
+  }
 
-    const { data, error } = await query;
-    if (!error && data) setPosts(data as UnifiedPost[]);
+  async function fetchPosts() {
+    setLoading(true);
+    setHasMore(true);
+    const { data, error } = await buildQuery(0);
+    if (!error && data) {
+      setPosts(data as UnifiedPost[]);
+      setHasMore(data.length === PAGE_SIZE);
+    }
     setLoading(false);
   }
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const { data, error } = await buildQuery(posts.length);
+    if (!error && data) {
+      setPosts((prev) => [...prev, ...(data as UnifiedPost[])]);
+      setHasMore(data.length === PAGE_SIZE);
+    }
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, posts.length, minScore, sortBy, platform, category]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function onScroll() {
+      if (!el) return;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+        loadMore();
+      }
+    }
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [loadMore]);
 
   const scoredCount = posts.length;
   const highScoreCount = posts.filter((p) => (p.score ?? 0) >= 7).length;
@@ -192,7 +228,7 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
             color: "#9ca3af",
           }}
         >
-          <span>{scoredCount} posts</span>
+          <span>{scoredCount}{hasMore ? "+" : ""} posts</span>
           {highScoreCount > 0 && (
             <span style={{ color: "#22c55e" }}>
               {highScoreCount} above 7.0
@@ -227,7 +263,7 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
           No posts found
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
           {posts.map((post) => (
             <PostCard
               key={post.id}
@@ -237,6 +273,11 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
               collectionIds={postCollectionMap[post.id]}
             />
           ))}
+          {loadingMore && (
+            <div style={{ textAlign: "center", padding: "12px", color: "#9ca3af", fontSize: "13px" }}>
+              Loading more...
+            </div>
+          )}
         </div>
       )}
     </div>
