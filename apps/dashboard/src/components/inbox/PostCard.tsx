@@ -196,7 +196,14 @@ export function PostCard({ post, selected, onSelect }: PostCardProps) {
               </span>
             )}
             <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto" }}>
-              {post.platform}
+              {(() => {
+                const url = (post as any).post_url as string | undefined;
+                if (url) {
+                  const match = url.match(/\/r\/([^/]+)/);
+                  if (match) return `r/${match[1]}`;
+                }
+                return post.platform;
+              })()}
             </span>
           </div>
 

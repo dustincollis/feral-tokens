@@ -254,6 +254,23 @@ export function EpisodeBuilder({
                     {post.title}
                   </p>
 
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#9ca3af",
+                    }}
+                  >
+                    {(() => {
+                      const url = (post as any).post_url as string | undefined;
+                      if (url) {
+                        const match = url.match(/\/r\/([^/]+)/);
+                        if (match) return `r/${match[1]}`;
+                      }
+                      return post.platform;
+                    })()}
+                    {" "}· {post.score?.toFixed(1)}
+                  </span>
+
                   {post.body && (
                     <p
                       style={{
