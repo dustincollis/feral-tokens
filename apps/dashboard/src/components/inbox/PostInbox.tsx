@@ -51,13 +51,12 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
   const [category, setCategory] = useState("all");
   const [minScore, setMinScore] = useState(0);
   const [sortBy, setSortBy] = useState("score");
-  const [showDismissed, setShowDismissed] = useState(false);
   const [postCollectionMap, setPostCollectionMap] = useState<Record<string, string[]>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchPosts();
-  }, [platform, category, minScore, sortBy, showDismissed]);
+  }, [platform, category, minScore, sortBy]);
 
   useEffect(() => {
     fetchPostMap();
@@ -77,7 +76,7 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
       .from("posts")
       .select("*")
       .eq("status", "scored")
-      .eq("dismissed", showDismissed)
+      .eq("dismissed", false)
       .gte("score", minScore)
       .order(sortBy, { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1);
@@ -225,20 +224,6 @@ export function PostInbox({ onAddToEpisode, episodePostIds, refreshKey }: PostIn
             Refresh
           </button>
 
-          <button
-            onClick={() => setShowDismissed((v) => !v)}
-            style={{
-              fontSize: "13px",
-              backgroundColor: showDismissed ? "#fef3c7" : "#f3f4f6",
-              border: showDismissed ? "1px solid #f59e0b" : "1px solid #d1d5db",
-              borderRadius: "4px",
-              padding: "2px 12px",
-              cursor: "pointer",
-              color: showDismissed ? "#92400e" : undefined,
-            }}
-          >
-            {showDismissed ? "Show Active" : "Show Hidden"}
-          </button>
         </div>
 
         {/* Stats bar */}
