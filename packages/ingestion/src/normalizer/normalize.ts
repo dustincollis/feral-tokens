@@ -19,6 +19,7 @@ export function normalizePost(raw: RawPost): Omit<UnifiedPost, "id" | "created_a
     score: null,
     category: null,
     score_data: null,
+    dismissed: false,
     updated_at: new Date().toISOString(),
   };
 }

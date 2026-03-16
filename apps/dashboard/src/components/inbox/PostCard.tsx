@@ -8,6 +8,7 @@ interface PostCardProps {
   post: UnifiedPost;
   selected: boolean;
   onSelect: (post: UnifiedPost) => void;
+  onDismiss: (postId: string, dismissed: boolean) => void;
   collectionIds?: string[];
 }
 
@@ -59,7 +60,7 @@ function ScoreBox({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function PostCard({ post, selected, onSelect, collectionIds }: PostCardProps) {
+export function PostCard({ post, selected, onSelect, onDismiss, collectionIds }: PostCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const score = post.score ?? 0;
@@ -84,6 +85,8 @@ export function PostCard({ post, selected, onSelect, collectionIds }: PostCardPr
   const hasSubScores =
     commentary !== null && visual !== null && virality !== null && topical !== null;
 
+  const isDismissed = post.dismissed;
+
   return (
     <>
       <div
@@ -97,6 +100,8 @@ export function PostCard({ post, selected, onSelect, collectionIds }: PostCardPr
           display: "flex",
           flexDirection: "row",
           alignItems: "stretch",
+          opacity: isDismissed ? 0.4 : 1,
+          position: "relative",
         }}
       >
         {/* Thumbnail - click to zoom */}
@@ -221,6 +226,25 @@ export function PostCard({ post, selected, onSelect, collectionIds }: PostCardPr
                 return post.platform;
               })()}
             </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss(post.id, !isDismissed);
+              }}
+              style={{
+                fontSize: "11px",
+                color: isDismissed ? "#3b82f6" : "#9ca3af",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                marginLeft: "4px",
+              }}
+              title={isDismissed ? "Unhide this post" : "Hide this post"}
+            >
+              {isDismissed ? "Unhide" : "Hide"}
+            </button>
           </div>
 
           {/* Title */}

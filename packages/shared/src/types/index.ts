@@ -41,6 +41,7 @@ export interface UnifiedPost {
   score: number | null;
   category: string | null;
   score_data: Record<string, unknown> | null;
+  dismissed: boolean;
   created_at: string;
   updated_at: string;
 }
