@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { supabase } from "@feral-tokens/shared";
+import { runIngestion } from "@feral-tokens/ingestion";
 
 export const scrapeRoute = new Hono();
 
@@ -27,12 +28,32 @@ scrapeRoute.post("/", async (c) => {
     .select()
     .single();
 
-  // Trigger ingestion in background
-  fetch(`http://localhost:${process.env.PORT ?? "3001"}/api/ingest`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source_id, log_id: log?.id }),
-  }).catch(() => {});
+  // Run ingestion in background, update log when done
+  runIngestion(source_id)
+    .then(async (result) => {
+      if (log) {
+        await supabase
+          .from("scrape_logs")
+          .update({
+            status: "done",
+            result,
+            finished_at: new Date().toISOString(),
+          })
+          .eq("id", log.id);
+      }
+    })
+    .catch(async (err) => {
+      if (log) {
+        await supabase
+          .from("scrape_logs")
+          .update({
+            status: "error",
+            result: { error: err.message },
+            finished_at: new Date().toISOString(),
+          })
+          .eq("id", log.id);
+      }
+    });
 
   return c.json({ message: "Scrape triggered", source: source.name });
 });

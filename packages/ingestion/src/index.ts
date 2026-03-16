@@ -16,22 +16,40 @@ const ADAPTERS: Record<string, any> = {
   x: XAdapter,
 };
 
-async function main() {
-  logger.info("Starting ingestion run");
+export interface IngestionResult {
+  sources_processed: number;
+  total_inserted: number;
+  total_skipped: number;
+  errors: string[];
+}
 
-  const { data: sources, error } = await supabase
-    .from("sources")
-    .select("*")
-    .eq("enabled", true);
+/**
+ * Run ingestion for one source or all enabled sources.
+ * Returns a summary of what happened.
+ */
+export async function runIngestion(sourceId?: string): Promise<IngestionResult> {
+  logger.info({ sourceId }, "Starting ingestion run");
+
+  const result: IngestionResult = {
+    sources_processed: 0,
+    total_inserted: 0,
+    total_skipped: 0,
+    errors: [],
+  };
+
+  let query = supabase.from("sources").select("*").eq("enabled", true);
+  if (sourceId) query = query.eq("id", sourceId);
+
+  const { data: sources, error } = await query;
 
   if (error) {
     logger.error({ error }, "Failed to fetch sources");
-    process.exit(1);
+    throw new Error("Failed to fetch sources");
   }
 
   if (!sources || sources.length === 0) {
     logger.info("No enabled sources found");
-    process.exit(0);
+    return result;
   }
 
   for (const source of sources) {
@@ -93,13 +111,17 @@ async function main() {
       }
 
       logger.info({ source: source.name, inserted, skipped }, "Source complete");
+      result.sources_processed++;
+      result.total_inserted += inserted;
+      result.total_skipped += skipped;
 
       await supabase
         .from("sources")
         .update({ last_scraped_at: new Date().toISOString() })
         .eq("id", source.id);
-    } catch (err) {
+    } catch (err: any) {
       logger.error({ err, source: source.name }, "Adapter failed");
+      result.errors.push(`${source.name}: ${err.message}`);
     }
   }
 
@@ -107,6 +129,19 @@ async function main() {
   await runScoringPipeline();
 
   logger.info("Ingestion run complete");
+  return result;
 }
 
-main();
+// CLI entry point — run all sources when executed directly
+const isDirectRun = process.argv[1]?.includes("ingestion");
+if (isDirectRun) {
+  runIngestion()
+    .then((result) => {
+      logger.info({ result }, "Done");
+      process.exit(0);
+    })
+    .catch((err) => {
+      logger.error({ err }, "Fatal error");
+      process.exit(1);
+    });
+}
