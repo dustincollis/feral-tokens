@@ -97,25 +97,34 @@ export function EpisodeBuilder({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-gray-700">
-            Episode Builder ({posts.length} bits)
-          </h2>
-          <div style={{ display: "flex", gap: "6px" }}>
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>
+            Episode Builder ({posts.length})
+          </span>
+          <div style={{ display: "flex", gap: "4px" }}>
             <button
               onClick={onGenerateScript}
               disabled={posts.length === 0 || generating}
-              className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-1.5 rounded"
+              style={{
+                fontSize: "11px",
+                padding: "3px 8px",
+                borderRadius: "4px",
+                border: "none",
+                cursor: posts.length === 0 || generating ? "default" : "pointer",
+                backgroundColor: posts.length === 0 || generating ? "#d1d5db" : "#3b82f6",
+                color: "white",
+                fontWeight: 500,
+              }}
             >
-              {generating ? "Generating..." : "Generate Script"}
+              {generating ? "Generating..." : "Generate"}
             </button>
             <button
               onClick={handleDownload}
               disabled={!script || posts.length === 0 || downloading}
               style={{
-                fontSize: "13px",
-                padding: "4px 12px",
+                fontSize: "11px",
+                padding: "3px 8px",
                 borderRadius: "4px",
                 border: "none",
                 cursor: !script || posts.length === 0 || downloading ? "default" : "pointer",
@@ -124,12 +133,12 @@ export function EpisodeBuilder({
                 fontWeight: 500,
               }}
             >
-              {downloading ? "Zipping..." : "↓ Package"}
+              {downloading ? "Zipping..." : "↓ Zip"}
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-500">Model:</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <label style={{ fontSize: "11px", color: "#9ca3af" }}>Model:</label>
           <select
             value={`${selectedProvider.provider}:${selectedProvider.model}`}
             onChange={(e) => {
@@ -138,7 +147,7 @@ export function EpisodeBuilder({
               );
               if (option) onProviderChange(option);
             }}
-            className="text-xs border rounded px-2 py-1 text-gray-600 bg-white"
+            style={{ fontSize: "11px", border: "1px solid #e5e7eb", borderRadius: "4px", padding: "2px 6px", color: "#4b5563", backgroundColor: "white" }}
           >
             {PROVIDER_OPTIONS.map((option) => (
               <option
