@@ -46,11 +46,23 @@ export async function rescorePosts(postIds: string[]) {
   });
 }
 
-export async function triggerScrape(sourceId: string) {
+export async function triggerScrape(
+  sourceId: string
+): Promise<{ message: string; source: string; log_id: string | null }> {
   return apiFetch("/api/scrape", {
     method: "POST",
     body: JSON.stringify({ source_id: sourceId }),
   });
+}
+
+export async function getScrapeStatus(logId: string): Promise<{
+  id: string;
+  source_id: string;
+  status: string;
+  result: any;
+  finished_at: string | null;
+}> {
+  return apiFetch(`/api/scrape/status/${logId}`);
 }
 
 export async function getSources() {

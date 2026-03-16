@@ -4,6 +4,7 @@ import { runIngestion } from "@feral-tokens/ingestion";
 
 export const scrapeRoute = new Hono();
 
+// Trigger a scrape for a single source
 scrapeRoute.post("/", async (c) => {
   const body = await c.req.json();
   const { source_id } = body;
@@ -55,5 +56,26 @@ scrapeRoute.post("/", async (c) => {
       }
     });
 
-  return c.json({ message: "Scrape triggered", source: source.name });
+  return c.json({
+    message: "Scrape triggered",
+    source: source.name,
+    log_id: log?.id ?? null,
+  });
+});
+
+// Poll scrape status by log ID
+scrapeRoute.get("/status/:logId", async (c) => {
+  const logId = c.req.param("logId");
+
+  const { data, error } = await supabase
+    .from("scrape_logs")
+    .select("*")
+    .eq("id", logId)
+    .single();
+
+  if (error || !data) {
+    return c.json({ error: "Log not found" }, 404);
+  }
+
+  return c.json(data);
 });

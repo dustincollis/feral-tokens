@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { triggerScrape } from "@/lib/api";
+import { triggerScrape, getScrapeStatus } from "@/lib/api";
 
 interface Source {
   id: string;
@@ -14,14 +14,24 @@ interface Source {
   config: Record<string, unknown>;
 }
 
+interface ScrapeJob {
+  logId: string;
+  status: "running" | "done" | "error";
+  result?: any;
+}
+
 export default function SettingsPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<Record<string, ScrapeJob>>({});
+  const pollTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   useEffect(() => {
     fetchSources();
+    return () => {
+      Object.values(pollTimers.current).forEach(clearInterval);
+    };
   }, []);
 
   async function fetchSources() {
@@ -34,14 +44,58 @@ export default function SettingsPage() {
     setLoading(false);
   }
 
-  async function handleScrape(sourceId: string, sourceName: string) {
+  const startPolling = useCallback((sourceId: string, logId: string) => {
+    // Clear any existing poll for this source
+    if (pollTimers.current[sourceId]) {
+      clearInterval(pollTimers.current[sourceId]);
+    }
+
+    setJobs((prev) => ({
+      ...prev,
+      [sourceId]: { logId, status: "running" },
+    }));
+
+    pollTimers.current[sourceId] = setInterval(async () => {
+      try {
+        const log = await getScrapeStatus(logId);
+        if (log.status === "done" || log.status === "error") {
+          clearInterval(pollTimers.current[sourceId]);
+          delete pollTimers.current[sourceId];
+          setJobs((prev) => ({
+            ...prev,
+            [sourceId]: {
+              logId,
+              status: log.status as "done" | "error",
+              result: log.result,
+            },
+          }));
+          // Refresh sources to get updated last_scraped_at
+          if (log.status === "done") fetchSources();
+        }
+      } catch {
+        // Keep polling on fetch errors
+      }
+    }, 2000);
+  }, []);
+
+  async function handleScrape(sourceId: string) {
     setScraping(sourceId);
-    setMessage(null);
+    // Clear any previous result for this source
+    setJobs((prev) => {
+      const next = { ...prev };
+      delete next[sourceId];
+      return next;
+    });
     try {
-      await triggerScrape(sourceId);
-      setMessage(`Scrape triggered for ${sourceName}`);
-    } catch (err) {
-      setMessage(`Failed to trigger scrape for ${sourceName}`);
+      const resp = await triggerScrape(sourceId);
+      if (resp.log_id) {
+        startPolling(sourceId, resp.log_id);
+      }
+    } catch {
+      setJobs((prev) => ({
+        ...prev,
+        [sourceId]: { logId: "", status: "error", result: { error: "Failed to trigger scrape" } },
+      }));
     } finally {
       setScraping(null);
     }
@@ -49,14 +103,15 @@ export default function SettingsPage() {
 
   async function handleScrapeAll() {
     setScraping("all");
-    setMessage(null);
     try {
       for (const source of sources.filter((s) => s.enabled)) {
-        await triggerScrape(source.id);
+        const resp = await triggerScrape(source.id);
+        if (resp.log_id) {
+          startPolling(source.id, resp.log_id);
+        }
       }
-      setMessage("Scrape triggered for all enabled sources");
-    } catch (err) {
-      setMessage("Failed to trigger scrape for all sources");
+    } catch {
+      // Individual source errors handled by polling
     } finally {
       setScraping(null);
     }
@@ -70,79 +125,196 @@ export default function SettingsPage() {
     fetchSources();
   }
 
+  function renderJobStatus(sourceId: string) {
+    const job = jobs[sourceId];
+    if (!job) return null;
+
+    if (job.status === "running") {
+      return (
+        <span
+          style={{
+            fontSize: "11px",
+            color: "#3b82f6",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: "#3b82f6",
+              display: "inline-block",
+              animation: "pulse 1.5s ease-in-out infinite",
+            }}
+          />
+          Scraping...
+        </span>
+      );
+    }
+
+    if (job.status === "done") {
+      const r = job.result;
+      const inserted = r?.total_inserted ?? 0;
+      const skipped = r?.total_skipped ?? 0;
+      return (
+        <span style={{ fontSize: "11px", color: "#16a34a" }}>
+          Done — {inserted} new, {skipped} skipped
+        </span>
+      );
+    }
+
+    if (job.status === "error") {
+      const msg = job.result?.error ?? "Unknown error";
+      return (
+        <span style={{ fontSize: "11px", color: "#dc2626" }}>
+          Error: {msg}
+        </span>
+      );
+    }
+
+    return null;
+  }
+
+  const healthColor = (status: string) =>
+    status === "healthy" ? "#22c55e" : status === "degraded" ? "#eab308" : "#ef4444";
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+    <div style={{ minHeight: "100vh", backgroundColor: "#f9fafb", padding: "32px" }}>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+      <div style={{ maxWidth: "896px", margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "32px",
+          }}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage sources and trigger scrapes</p>
+            <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#111827" }}>Settings</h1>
+            <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}>
+              Manage sources and trigger scrapes
+            </p>
           </div>
-          <div className="flex gap-3">
+          <div style={{ display: "flex", gap: "12px" }}>
             <a
               href="/"
-              className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded"
+              style={{
+                fontSize: "13px",
+                backgroundColor: "#f3f4f6",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                color: "#374151",
+                textDecoration: "none",
+              }}
             >
               Back to Dashboard
             </a>
             <button
               onClick={handleScrapeAll}
               disabled={scraping !== null}
-              className="text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-2 rounded"
+              style={{
+                fontSize: "13px",
+                backgroundColor: scraping !== null ? "#d1d5db" : "#3b82f6",
+                color: "white",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                border: "none",
+                cursor: scraping !== null ? "default" : "pointer",
+                fontWeight: 500,
+              }}
             >
-              {scraping === "all" ? "Scraping..." : "Scrape All Sources"}
+              {scraping === "all" ? "Triggering..." : "Scrape All Sources"}
             </button>
           </div>
         </div>
 
-        {message && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-            {message}
-          </div>
-        )}
-
         {loading ? (
-          <div className="text-gray-400 text-center py-12">Loading sources...</div>
+          <div style={{ textAlign: "center", padding: "48px", color: "#9ca3af" }}>
+            Loading sources...
+          </div>
         ) : (
-          <div className="bg-white rounded-xl border divide-y">
-            {sources.map((source) => (
-              <div key={source.id} className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-4">
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              overflow: "hidden",
+            }}
+          >
+            {sources.map((source, i) => (
+              <div
+                key={source.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "16px",
+                  borderTop: i > 0 ? "1px solid #e5e7eb" : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0 }}>
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      source.health_status === "healthy"
-                        ? "bg-green-500"
-                        : source.health_status === "degraded"
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      backgroundColor: healthColor(source.health_status),
+                      flexShrink: 0,
+                    }}
                   />
-                  <div>
-                    <p className="font-medium text-gray-900">{source.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {source.platform} {source.last_scraped_at
-                        ? `Last scraped ${new Date(source.last_scraped_at).toLocaleString()}`
-                        : "Never scraped"}
-                    </p>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 500, color: "#111827" }}>{source.name}</p>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "2px" }}>
+                      <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+                        {source.platform}
+                        {" · "}
+                        {source.last_scraped_at
+                          ? `Last scraped ${new Date(source.last_scraped_at).toLocaleString()}`
+                          : "Never scraped"}
+                      </span>
+                      {renderJobStatus(source.id)}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                   <button
                     onClick={() => handleToggle(source)}
-                    className={`text-xs px-3 py-1 rounded-full border ${
-                      source.enabled
-                        ? "border-green-300 text-green-700 bg-green-50"
-                        : "border-gray-300 text-gray-500 bg-gray-50"
-                    }`}
+                    style={{
+                      fontSize: "12px",
+                      padding: "4px 12px",
+                      borderRadius: "999px",
+                      border: source.enabled ? "1px solid #86efac" : "1px solid #d1d5db",
+                      color: source.enabled ? "#15803d" : "#6b7280",
+                      backgroundColor: source.enabled ? "#f0fdf4" : "#f9fafb",
+                      cursor: "pointer",
+                    }}
                   >
                     {source.enabled ? "Enabled" : "Disabled"}
                   </button>
                   <button
-                    onClick={() => handleScrape(source.id, source.name)}
-                    disabled={scraping !== null}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-40 px-3 py-1 rounded"
+                    onClick={() => handleScrape(source.id)}
+                    disabled={scraping !== null || jobs[source.id]?.status === "running"}
+                    style={{
+                      fontSize: "12px",
+                      padding: "4px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      backgroundColor:
+                        scraping !== null || jobs[source.id]?.status === "running"
+                          ? "#e5e7eb"
+                          : "#f3f4f6",
+                      color: "#374151",
+                      cursor:
+                        scraping !== null || jobs[source.id]?.status === "running"
+                          ? "default"
+                          : "pointer",
+                    }}
                   >
-                    {scraping === source.id ? "Scraping..." : "Scrape Now"}
+                    {jobs[source.id]?.status === "running" ? "Scraping..." : "Scrape Now"}
                   </button>
                 </div>
               </div>
