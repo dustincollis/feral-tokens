@@ -4,27 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Feral Tokens is a content ingestion engine for a YouTube channel about AI culture. It scrapes Reddit, scores posts with Claude, and generates episode scripts. The dashboard provides curation UI with AI-powered collections and script generation.
+Feral Tokens is a content ingestion engine for a YouTube channel about AI culture. It scrapes Reddit (and other platforms), scores posts with Claude, and generates episode scripts. The dashboard provides curation UI with AI-powered collections and script generation.
 
 ## Monorepo Structure
 
 Turborepo monorepo with four workspaces:
 
-- **packages/ingestion** — Reddit scraper + AI scoring pipeline (deployed on Railway)
+- **packages/ingestion** — Reddit/YouTube/X scraper + AI scoring pipeline (deployed on Railway)
 - **packages/api** — Hono REST API server (deployed on Railway)
-- **packages/shared** — Shared types + Supabase client
-- **apps/dashboard** — Next.js frontend (deployed on Vercel)
+- **packages/shared** — Shared types (`UnifiedPost`, `SourceConfig`, `Platform`), Supabase client singleton, utilities (`hashContent`, `retry`)
+- **apps/dashboard** — Next.js 16 frontend with React 19 (deployed on Vercel)
 
-## Run Locally
+## Commands
 
 ```bash
 # Ingestion (one-shot scrape + score)
 cd packages/ingestion && npx tsx --env-file=../../.env src/index.ts
 
-# API server
+# API server (port 3001)
 cd packages/api && npx tsx src/index.ts
 
-# Dashboard
+# Dashboard (port 3000)
 cd apps/dashboard && npm run dev
 
 # Monorepo-wide
@@ -34,32 +34,49 @@ npm run lint       # Lint all workspaces
 
 No test framework is configured.
 
-## Key Files
+## Architecture
 
-- `packages/ingestion/src/scoring/prompt.ts` — 4-dimension scoring prompt
-- `packages/ingestion/src/scoring/pipeline.ts` — Batch scoring with images
-- `packages/ingestion/src/scoring/parse.ts` — Sub-score parser
-- `packages/api/src/routes/collections.ts` — Opus episode lineup suggestions
-- `packages/api/src/routes/generate.ts` — Opus script generation
-- `packages/api/src/index.ts` — API route registration
-- `apps/dashboard/src/app/page.tsx` — Main layout with tabs
-- `apps/dashboard/src/components/inbox/PostCard.tsx` — Post card with scores
-- `apps/dashboard/src/components/builder/EpisodeBuilder.tsx` — Episode builder
-- `apps/dashboard/src/components/collections/CollectionsPanel.tsx` — AI collections
-- `apps/dashboard/src/components/shared/ImageLightbox.tsx` — Image zoom
-- `apps/dashboard/src/lib/api.ts` — Dashboard API client
+### Data Flow
 
-## Data Flow
+1. **Scrape**: Platform adapters (`adapters/reddit.ts`, `youtube.ts`, `x.ts`) implement `SourceAdapter` interface → fetch raw posts since `last_scraped_at`
+2. **Normalize + Dedup**: Convert to `UnifiedPost` with SHA-256 content hash → check duplicates by hash and `external_id`
+3. **Images**: Sharp resizes to 400px JPEG thumbnail → uploads original + thumbnail to Supabase `post-images` bucket
+4. **Score**: `scoring/pipeline.ts` sends posts (with base64 thumbnails) to Claude Sonnet in batches of 8 → 4 dimensions (commentary 35%, visual 30%, virality 20%, topical 15%) → composite score recomputed by parser (not trusting model math) → pitch generated only for score ≥ 7.0
+5. **Collections**: Opus suggests episode lineups from scored posts
+6. **Script Generation**: Opus generates full episode scripts with detailed system prompt
 
-1. **Ingestion**: Reddit adapter scrapes subreddits → normalize to `UnifiedPost` → dedup via SHA-256 hash → image processing (Sharp thumbnails) → Supabase `posts` table as `pending_score`
-2. **Scoring**: `scoring/pipeline.ts` sends posts (with base64 images) to Claude Sonnet in batches of 8 → scores on 4 dimensions (commentary, visual, virality, topical) → extracts structured scores + pitch + category
-3. **Collections**: Opus suggests episode lineups from scored posts via `api/routes/collections.ts`
-4. **Script Generation**: Opus generates full episode scripts via `api/routes/generate.ts`
+### API Routes (packages/api)
 
-## Architecture Notes
+All routes mounted under `/api/*` on Hono. Auth via `Authorization: Bearer API_SECRET_TOKEN`.
 
-- **Database**: Supabase (PostgreSQL + storage). Key columns on `posts`: `score`, `score_commentary`, `score_visual`, `score_virality`, `score_topical`, `pitch`, `category`, `status`, `thumbnail_url`, `post_url`. `sources` table holds Reddit subreddit configs.
-- **AI Models**: Anthropic Claude via `@anthropic-ai/sdk` — Sonnet for scoring, Opus for collections + scripts.
-- **Styling**: All inline styles in dashboard (Tailwind v4 conflict workaround — do not use Tailwind utility classes).
-- **Auth**: API routes use a shared `API_SECRET_TOKEN` Bearer token.
-- **Environment**: See `.env.example` for required variables.
+- `POST /api/scrape` — triggers `runIngestion()` imported from ingestion package; `GET /api/scrape/status/:logId` polls progress
+- `POST /api/score` — manual re-scoring of individual posts
+- `POST /api/generate` — episode script generation (Opus)
+- `POST /api/collections` — AI-suggested episode lineups (supports Anthropic and xAI providers)
+- `GET|PUT|POST /api/sources` — CRUD for source configs
+- `/api/saved-collections` — CRUD for saved collections (auto-generates short_id like SC-001)
+
+### Dashboard Layout
+
+- Left panel: 4-tab UI (Inbox, Collections, Saved, Script) with tab content
+- Right sidebar: Episode Builder (always visible, ~25% width)
+- Inbox lazy-loads posts in batches of 50 with infinite scroll
+
+### Cross-Package Imports
+
+Workspaces use `@feral-tokens/ingestion`, `@feral-tokens/api`, `@feral-tokens/shared` namespaces. The API package imports `runIngestion` directly from the ingestion package to trigger scrapes via HTTP.
+
+### Supabase Client Pattern
+
+- **Ingestion + API**: Use `SUPABASE_SERVICE_KEY` (full permissions, no RLS) via shared singleton
+- **Dashboard**: Uses `SUPABASE_ANON_KEY` (client-side, RLS enforced) for real-time subscriptions
+
+### Database
+
+Supabase PostgreSQL. Key tables: `posts` (content + scores + status), `sources` (platform configs), `scrape_logs` (audit trail), `episodes` (drafts), `saved_collections`. Post status lifecycle: `pending_score` → `scored` → `featured`/`rejected`. Schema in `supabase/schema.sql`.
+
+## Critical Constraints
+
+- **Styling**: Dashboard uses ONLY inline React style objects. Do NOT use Tailwind utility classes — there is a Tailwind v4 conflict with the Next.js setup that breaks class-based styling.
+- **AI Models**: Sonnet for scoring (batch pipeline), Opus for collections + script generation. Both via `@anthropic-ai/sdk`.
+- **Environment**: Root `.env` file loaded via `--env-file` flag for ingestion. Dashboard uses `NEXT_PUBLIC_` prefix for client-side vars (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_API_TOKEN`). See `.env.example` for all required variables.

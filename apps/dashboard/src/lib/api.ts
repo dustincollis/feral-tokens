@@ -59,8 +59,11 @@ export async function getScrapeStatus(logId: string): Promise<{
   id: string;
   source_id: string;
   status: string;
-  result: any;
-  finished_at: string | null;
+  posts_found: number;
+  posts_inserted: number;
+  posts_skipped: number;
+  error: string | null;
+  completed_at: string | null;
 }> {
   return apiFetch(`/api/scrape/status/${logId}`);
 }

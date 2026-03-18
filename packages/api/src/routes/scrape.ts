@@ -37,8 +37,11 @@ scrapeRoute.post("/", async (c) => {
           .from("scrape_logs")
           .update({
             status: "done",
-            result,
-            finished_at: new Date().toISOString(),
+            posts_found: result.total_inserted + result.total_skipped,
+            posts_inserted: result.total_inserted,
+            posts_skipped: result.total_skipped,
+            error: result.errors.length > 0 ? result.errors.join("; ") : null,
+            completed_at: new Date().toISOString(),
           })
           .eq("id", log.id);
       }
@@ -49,8 +52,8 @@ scrapeRoute.post("/", async (c) => {
           .from("scrape_logs")
           .update({
             status: "error",
-            result: { error: err.message },
-            finished_at: new Date().toISOString(),
+            error: err.message,
+            completed_at: new Date().toISOString(),
           })
           .eq("id", log.id);
       }

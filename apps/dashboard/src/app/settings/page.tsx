@@ -18,7 +18,9 @@ interface Source {
 interface ScrapeJob {
   logId: string;
   status: "running" | "done" | "error";
-  result?: any;
+  posts_inserted?: number;
+  posts_skipped?: number;
+  error?: string | null;
 }
 
 const PAGE_SIZE = 50;
@@ -143,7 +145,9 @@ function SourcesTab() {
             [sourceId]: {
               logId,
               status: log.status as "done" | "error",
-              result: log.result,
+              posts_inserted: log.posts_inserted,
+              posts_skipped: log.posts_skipped,
+              error: log.error,
             },
           }));
           if (log.status === "done") fetchSources();
@@ -169,7 +173,7 @@ function SourcesTab() {
     } catch {
       setJobs((prev) => ({
         ...prev,
-        [sourceId]: { logId: "", status: "error", result: { error: "Failed to trigger scrape" } },
+        [sourceId]: { logId: "", status: "error", error: "Failed to trigger scrape" },
       }));
     } finally {
       setScraping(null);
@@ -231,9 +235,8 @@ function SourcesTab() {
     }
 
     if (job.status === "done") {
-      const r = job.result;
-      const inserted = r?.total_inserted ?? 0;
-      const skipped = r?.total_skipped ?? 0;
+      const inserted = job.posts_inserted ?? 0;
+      const skipped = job.posts_skipped ?? 0;
       return (
         <span style={{ fontSize: "11px", color: "#16a34a" }}>
           Done — {inserted} new, {skipped} skipped
@@ -242,7 +245,7 @@ function SourcesTab() {
     }
 
     if (job.status === "error") {
-      const msg = job.result?.error ?? "Unknown error";
+      const msg = job.error ?? "Unknown error";
       return (
         <span style={{ fontSize: "11px", color: "#dc2626" }}>
           Error: {msg}
