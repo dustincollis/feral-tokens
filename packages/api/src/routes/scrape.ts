@@ -36,7 +36,7 @@ scrapeRoute.post("/", async (c) => {
         await supabase
           .from("scrape_logs")
           .update({
-            status: "done",
+            status: "completed",
             posts_found: result.total_inserted + result.total_skipped,
             posts_inserted: result.total_inserted,
             posts_skipped: result.total_skipped,
@@ -51,7 +51,7 @@ scrapeRoute.post("/", async (c) => {
         await supabase
           .from("scrape_logs")
           .update({
-            status: "error",
+            status: "failed",
             error: err.message,
             completed_at: new Date().toISOString(),
           })

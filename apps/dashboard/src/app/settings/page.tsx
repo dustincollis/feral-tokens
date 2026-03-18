@@ -17,7 +17,7 @@ interface Source {
 
 interface ScrapeJob {
   logId: string;
-  status: "running" | "done" | "error";
+  status: "running" | "completed" | "failed";
   posts_inserted?: number;
   posts_skipped?: number;
   error?: string | null;
@@ -137,20 +137,20 @@ function SourcesTab() {
     pollTimers.current[sourceId] = setInterval(async () => {
       try {
         const log = await getScrapeStatus(logId);
-        if (log.status === "done" || log.status === "error") {
+        if (log.status === "completed" || log.status === "failed") {
           clearInterval(pollTimers.current[sourceId]);
           delete pollTimers.current[sourceId];
           setJobs((prev) => ({
             ...prev,
             [sourceId]: {
               logId,
-              status: log.status as "done" | "error",
+              status: log.status as "completed" | "failed",
               posts_inserted: log.posts_inserted,
               posts_skipped: log.posts_skipped,
               error: log.error,
             },
           }));
-          if (log.status === "done") fetchSources();
+          if (log.status === "completed") fetchSources();
         }
       } catch {
         // Keep polling on fetch errors
@@ -173,7 +173,7 @@ function SourcesTab() {
     } catch {
       setJobs((prev) => ({
         ...prev,
-        [sourceId]: { logId: "", status: "error", error: "Failed to trigger scrape" },
+        [sourceId]: { logId: "", status: "failed", error: "Failed to trigger scrape" },
       }));
     } finally {
       setScraping(null);
@@ -234,7 +234,7 @@ function SourcesTab() {
       );
     }
 
-    if (job.status === "done") {
+    if (job.status === "completed") {
       const inserted = job.posts_inserted ?? 0;
       const skipped = job.posts_skipped ?? 0;
       return (
@@ -244,7 +244,7 @@ function SourcesTab() {
       );
     }
 
-    if (job.status === "error") {
+    if (job.status === "failed") {
       const msg = job.error ?? "Unknown error";
       return (
         <span style={{ fontSize: "11px", color: "#dc2626" }}>
