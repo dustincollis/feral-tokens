@@ -32,8 +32,9 @@ scrapeRoute.post("/", async (c) => {
   // Run ingestion in background, update log when done
   runIngestion(source_id)
     .then(async (result) => {
+      console.log(`[scrape] Ingestion completed for ${source.name}:`, result);
       if (log) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from("scrape_logs")
           .update({
             status: "completed",
@@ -44,18 +45,21 @@ scrapeRoute.post("/", async (c) => {
             completed_at: new Date().toISOString(),
           })
           .eq("id", log.id);
+        if (updateErr) console.error(`[scrape] Failed to update log:`, updateErr);
       }
     })
     .catch(async (err) => {
+      console.error(`[scrape] Ingestion failed for ${source.name}:`, err);
       if (log) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from("scrape_logs")
           .update({
             status: "failed",
-            error: err.message,
+            error: String(err?.message ?? err),
             completed_at: new Date().toISOString(),
           })
           .eq("id", log.id);
+        if (updateErr) console.error(`[scrape] Failed to update log:`, updateErr);
       }
     });
 
